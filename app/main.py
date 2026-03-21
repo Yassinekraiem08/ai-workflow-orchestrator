@@ -28,7 +28,7 @@ def register_tools() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
-    setup_telemetry(app)
+    setup_telemetry()
     register_tools()
 
     yield

@@ -29,7 +29,7 @@ def _build_exporter() -> SpanExporter:
     return ConsoleSpanExporter()
 
 
-def setup_telemetry(app: Any = None) -> TracerProvider | None:
+def setup_telemetry() -> TracerProvider | None:
     """
     Initialise the global TracerProvider.
     Returns the provider (useful for tests that want to inspect spans).
@@ -47,13 +47,6 @@ def setup_telemetry(app: Any = None) -> TracerProvider | None:
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(BatchSpanProcessor(_build_exporter()))
     trace.set_tracer_provider(provider)
-
-    if app is not None:
-        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-        FastAPIInstrumentor.instrument_app(app)
-
-    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-    HTTPXClientInstrumentor().instrument()
 
     return provider
 
