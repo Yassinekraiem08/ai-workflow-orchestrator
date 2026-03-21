@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     max_celery_retries: int = 3
     step_timeout_seconds: int = 60
     celery_retry_delay_seconds: int = 30
+    max_replan_depth: int = 2  # max times re-planner can inject new steps per run
 
 
 settings = Settings()

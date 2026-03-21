@@ -13,6 +13,7 @@ class StepExecutionOutput(BaseModel):
     next_action: str
     severity: str | None = None  # critical, high, medium, low
     raw_tool_output: dict[str, Any] | None = None
+    needs_replan: bool = False  # set True if findings warrant new investigative steps
 
 
 class ExecutorAgent(BaseAgent):
@@ -28,7 +29,10 @@ class ExecutorAgent(BaseAgent):
             "1. Analyze the step's tool output\n"
             "2. Extract key findings relevant to the overall workflow\n"
             "3. Determine the next recommended action\n"
-            "4. Assess severity if applicable\n\n"
+            "4. Assess severity if applicable\n"
+            "5. Set needs_replan=true ONLY if the findings reveal something critical that "
+            "the remaining planned steps cannot address — for example, a new error source "
+            "was discovered, a database anomaly was found, or escalation paths are unclear.\n\n"
             "Be concise and precise. Focus on actionable insights.\n"
             "You MUST call the 'record_step_result' tool with your synthesis."
         )
