@@ -1,0 +1,34 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Task queue
+celery==5.4.0
+redis==5.2.0
+
+# Database
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+greenlet==3.1.1
+
+# Pydantic
+pydantic[email]==2.10.3
+pydantic-settings==2.6.1
+
+# OpenAI
+openai==1.58.1
+
+# HTTP client (for tools)
+httpx==0.28.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-mock==3.14.0
+httpx==0.28.1
+respx==0.21.1
+
+# Utilities
+python-dotenv==1.0.1
+structlog==24.4.0
