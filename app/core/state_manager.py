@@ -16,6 +16,13 @@ def get_redis() -> aioredis.Redis:
     return _redis_client
 
 
+def reset_redis_client() -> None:
+    """Reset the cached Redis client. Call before asyncio.run() in Celery workers
+    so each task gets a fresh client bound to the new event loop."""
+    global _redis_client
+    _redis_client = None
+
+
 def _run_key(run_id: str) -> str:
     return f"run:{run_id}:status"
 

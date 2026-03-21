@@ -4,6 +4,7 @@ from celery import Task
 
 from app.config import settings
 from app.core.orchestrator import OrchestratorInput, run_workflow
+from app.core.state_manager import reset_redis_client
 from app.services.logging_service import get_logger
 from app.services.telemetry_service import get_tracer
 from app.utils.enums import InputType, RunStatus
@@ -43,6 +44,7 @@ def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: s
                 raw_input=raw_input,
                 priority=priority,
             )
+            reset_redis_client()
             result = asyncio.run(run_workflow(orchestrator_input))
             log.info("celery_task_completed", status=result.status)
             return result.model_dump()
@@ -80,4 +82,5 @@ def dead_letter_task(run_id: str, reason: str) -> None:
             await workflow_service.update_run_status(db, run_id, RunStatus.DEAD_LETTER)
             await state_manager.set_status(run_id, RunStatus.DEAD_LETTER)
 
+    reset_redis_client()
     asyncio.run(_mark_dead_letter())
