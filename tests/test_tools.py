@@ -109,8 +109,7 @@ class TestDatabaseQueryTool:
 @pytest.mark.asyncio
 class TestWebhookTool:
     async def test_webhook_post_success(self):
-        import httpx
-        from unittest.mock import AsyncMock, patch, MagicMock
+        from unittest.mock import AsyncMock, MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -132,7 +131,7 @@ class TestWebhookTool:
         assert result.output["status_code"] == 200
 
     async def test_webhook_failure_status(self):
-        from unittest.mock import AsyncMock, patch, MagicMock
+        from unittest.mock import AsyncMock, MagicMock, patch
 
         mock_response = MagicMock()
         mock_response.status_code = 500

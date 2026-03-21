@@ -1,0 +1,20 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (undefined names, unused imports)
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade (modern Python syntax)
+    "B",   # flake8-bugbear (common bugs)
+]
+ignore = [
+    "E501",  # line-too-long — enforced by line-length above
+    "B008",  # function call in default argument — FastAPI Depends() pattern
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101"]      # assert statements are fine in tests
+"alembic/*" = ["E402", "F401"]  # migration files have atypical import patterns

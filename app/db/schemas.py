@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 
 from app.utils.enums import InputType, RunStatus, StepStatus
 
-
 # --- Requests ---
 
 class WorkflowSubmitRequest(BaseModel):

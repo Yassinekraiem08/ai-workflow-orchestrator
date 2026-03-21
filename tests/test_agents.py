@@ -2,11 +2,12 @@
 Agent unit tests with mocked LLM service.
 """
 
-import pytest
 from unittest.mock import AsyncMock, patch
 
-from app.agents.classifier_agent import ClassifierAgent, ClassificationOutput
-from app.agents.planner_agent import PlannerAgent, ExecutionPlan, PlanStep
+import pytest
+
+from app.agents.classifier_agent import ClassifierAgent
+from app.agents.planner_agent import PlannerAgent
 from app.utils.exceptions import ClassificationError, LLMResponseError
 
 

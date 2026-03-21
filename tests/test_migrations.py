@@ -3,9 +3,10 @@ Migration tests — verify Alembic upgrade/downgrade without a live Postgres ins
 Uses SQLite in-memory via a synchronous connection override in alembic/env.py.
 """
 
-from sqlalchemy import create_engine, inspect, text
-from alembic.config import Config
+from sqlalchemy import create_engine, inspect
+
 from alembic import command
+from alembic.config import Config
 
 
 def test_migration_upgrade_and_downgrade():

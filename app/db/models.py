@@ -1,10 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import (
-    String, Text, Integer, Boolean, DateTime, JSON,
-    ForeignKey, Index
-)
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 

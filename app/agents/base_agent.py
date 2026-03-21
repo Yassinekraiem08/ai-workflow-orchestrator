@@ -7,7 +7,6 @@ from app.config import settings
 from app.services import llm_service
 from app.services.llm_service import LLMRequest, LLMResponse
 from app.utils.exceptions import LLMResponseError
-from app.utils.helpers import truncate_for_log
 
 
 class AgentResult(BaseModel):

@@ -3,8 +3,9 @@ Orchestrator integration tests with fully mocked LLM and DB.
 Tests the full classify → plan → execute lifecycle.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from app.core.orchestrator import OrchestratorInput, run_workflow
 from app.utils.enums import InputType, RunStatus
@@ -137,7 +138,6 @@ async def test_full_workflow_run():
             return make_planner_response()
         else:
             # Executor calls
-            tool_name = request.tools[0]["name"] if request.tools else "record_step_result"
             step_name = f"step_{llm_call_count}"
             return make_executor_response(step_name)
 

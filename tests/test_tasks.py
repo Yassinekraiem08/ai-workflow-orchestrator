@@ -6,16 +6,18 @@ Uses Celery's push_request()/pop_request() pattern to set up the task
 context (request.retries, request.id) for testing.
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from app.utils.enums import RunStatus
 
 
 def test_celery_task_retries_on_failure():
     """When the orchestrator fails and retries remain, self.retry() is called."""
-    from app.workers.tasks import execute_workflow_task
     from celery.exceptions import Retry as CeleryRetry
+
+    from app.workers.tasks import execute_workflow_task
 
     mock_retry = MagicMock(side_effect=CeleryRetry())
 
@@ -57,8 +59,8 @@ def test_celery_task_does_not_retry_at_max():
 
 def test_celery_task_succeeds_on_valid_orchestrator_result():
     """When the orchestrator completes successfully, the task returns the serialized result."""
-    from app.workers.tasks import execute_workflow_task
     from app.core.orchestrator import OrchestratorResult
+    from app.workers.tasks import execute_workflow_task
 
     mock_result = OrchestratorResult(
         run_id="run_ok_001",

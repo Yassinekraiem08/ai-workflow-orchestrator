@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models import LLMTrace, ToolCall, WorkflowRun, WorkflowStep
 from app.utils.enums import RunStatus, StepStatus
 from app.utils.exceptions import WorkflowNotFoundError
-from app.utils.helpers import generate_run_id, generate_step_id, generate_trace_id, utcnow
+from app.utils.helpers import generate_step_id, generate_trace_id, utcnow
 
 
 async def create_run(

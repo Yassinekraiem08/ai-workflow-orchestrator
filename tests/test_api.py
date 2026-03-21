@@ -2,10 +2,10 @@
 API tests using FastAPI TestClient with mocked DB and Celery.
 """
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -15,8 +15,8 @@ def _make_mock_run(run_id: str = "run_abc123", status: str = "queued"):
     mock_run.status = status
     mock_run.input_type = "log"
     mock_run.priority = 5
-    mock_run.created_at = datetime.now(timezone.utc)
-    mock_run.updated_at = datetime.now(timezone.utc)
+    mock_run.created_at = datetime.now(UTC)
+    mock_run.updated_at = datetime.now(UTC)
     mock_run.final_output = None
     return mock_run
 

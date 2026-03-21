@@ -18,7 +18,7 @@ async def get_workflow(
     try:
         run = await workflow_service.get_run(db, run_id)
     except WorkflowNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found") from None
 
     # Check Redis for a fresher status (worker may have updated it)
     live_status = await state_manager.get_status(run_id)
@@ -38,7 +38,7 @@ async def get_workflow_steps(
     try:
         await workflow_service.get_run(db, run_id)
     except WorkflowNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found") from None
 
     steps = await workflow_service.get_steps(db, run_id)
     return WorkflowStepsResponse(

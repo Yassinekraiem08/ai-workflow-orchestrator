@@ -1,5 +1,4 @@
 import asyncio
-import logging
 
 from celery import Task
 
@@ -43,7 +42,7 @@ def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: s
 
         if self.request.retries < self.max_retries:
             log.info("celery_task_retrying", retry=self.request.retries + 1)
-            raise self.retry(exc=exc)
+            raise self.retry(exc=exc) from exc
 
         # All retries exhausted → send to dead-letter queue
         dead_letter_task.delay(run_id, str(exc))
@@ -63,9 +62,9 @@ def dead_letter_task(run_id: str, reason: str) -> None:
     log.error("workflow_dead_lettered", reason=reason)
 
     async def _mark_dead_letter() -> None:
+        from app.core import state_manager
         from app.db.session import AsyncSessionFactory
         from app.services import workflow_service
-        from app.core import state_manager
 
         async with AsyncSessionFactory() as db:
             await workflow_service.update_run_status(db, run_id, RunStatus.DEAD_LETTER)

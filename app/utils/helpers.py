@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def generate_run_id() -> str:
@@ -15,7 +15,7 @@ def generate_trace_id() -> str:
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def truncate_for_log(text: str, max_length: int = 200) -> str:

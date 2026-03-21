@@ -34,12 +34,12 @@ class LogAnalysisTool(BaseTool):
             )
 
         lines = args.log_content.splitlines()
-        errors = [l for l in lines if "ERROR" in l.upper()]
-        warnings = [l for l in lines if "WARN" in l.upper()]
-        exceptions = [l for l in lines if re.search(r"exception|traceback|stacktrace", l, re.IGNORECASE)]
+        errors = [line for line in lines if "ERROR" in line.upper()]
+        warnings = [line for line in lines if "WARN" in line.upper()]
+        exceptions = [line for line in lines if re.search(r"exception|traceback|stacktrace", line, re.IGNORECASE)]
 
         if args.severity_filter:
-            filtered = [l for l in lines if args.severity_filter.upper() in l.upper()]
+            filtered = [line for line in lines if args.severity_filter.upper() in line.upper()]
         else:
             filtered = errors + warnings
 

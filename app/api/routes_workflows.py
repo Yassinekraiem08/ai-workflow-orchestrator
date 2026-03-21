@@ -49,7 +49,7 @@ async def retry_workflow(
     try:
         run = await workflow_service.get_run(db, run_id)
     except WorkflowNotFoundError:
-        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found")
+        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found") from None
 
     if run.status not in (RunStatus.FAILED.value, RunStatus.DEAD_LETTER.value):
         raise HTTPException(

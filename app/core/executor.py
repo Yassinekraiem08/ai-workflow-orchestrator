@@ -13,7 +13,6 @@ from app.services.logging_service import get_logger
 from app.tools.base import tool_registry
 from app.utils.enums import StepStatus
 from app.utils.exceptions import ToolExecutionError
-from app.utils.helpers import utcnow
 
 logger = get_logger(__name__)
 

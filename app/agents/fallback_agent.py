@@ -3,7 +3,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.agents.base_agent import BaseAgent
-from app.utils.exceptions import LLMResponseError
 
 
 class FallbackOutput(BaseModel):
@@ -68,7 +67,7 @@ class FallbackAgent(BaseAgent):
         try:
             output = FallbackOutput(**tool_input)
             return output.model_dump()
-        except Exception as e:
+        except Exception:
             # Fallback of the fallback: return a hardcoded safe response
             return {
                 "step_name": tool_input.get("step_name", "unknown"),
