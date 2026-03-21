@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import routes_health, routes_runs, routes_workflows
+from app.api import routes_auth, routes_health, routes_runs, routes_workflows
 from app.db.session import engine
 from app.services.logging_service import configure_logging
 from app.services.telemetry_service import setup_telemetry
@@ -47,5 +47,6 @@ app = FastAPI(
 )
 
 app.include_router(routes_health.router)
+app.include_router(routes_auth.router)
 app.include_router(routes_workflows.router)
 app.include_router(routes_runs.router)

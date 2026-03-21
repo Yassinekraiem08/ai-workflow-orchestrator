@@ -26,15 +26,19 @@ def client():
     """
     Creates a TestClient with the FastAPI app, mocking out the DB engine
     so no real PostgreSQL connection is needed.
+    Auth is bypassed via dependency_overrides so existing route tests stay clean.
     """
     with (
         patch("app.main.engine") as mock_engine,
         patch("app.db.session.engine"),
     ):
         mock_engine.dispose = AsyncMock()
+        from app.api.deps import require_auth
         from app.main import app
+        app.dependency_overrides[require_auth] = lambda: "test-user"
         with TestClient(app, raise_server_exceptions=True) as c:
             yield c
+        app.dependency_overrides.pop(require_auth, None)
 
 
 def test_health_check(client):

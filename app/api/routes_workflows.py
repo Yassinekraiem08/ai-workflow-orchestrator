@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import require_auth
 from app.db.schemas import WorkflowRunResponse, WorkflowSubmitRequest
 from app.db.session import get_db
 from app.services import workflow_service
@@ -9,7 +10,7 @@ from app.utils.exceptions import WorkflowNotFoundError
 from app.utils.helpers import generate_run_id
 from app.workers.tasks import execute_workflow_task
 
-router = APIRouter(prefix="/workflows", tags=["workflows"])
+router = APIRouter(prefix="/workflows", tags=["workflows"], dependencies=[Depends(require_auth)])
 
 
 @router.post("/submit", response_model=WorkflowRunResponse, status_code=status.HTTP_202_ACCEPTED)

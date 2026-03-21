@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     celery_retry_delay_seconds: int = 30
     max_replan_depth: int = 2  # max times re-planner can inject new steps per run
 
+    # Auth
+    api_keys: str = "dev-key-changeme"  # comma-separated list; set via API_KEYS env var
+    jwt_secret: str = "changeme-in-production"  # override in prod via JWT_SECRET
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60
+
     # Observability
     otel_enabled: bool = False
     otlp_endpoint: str = ""  # e.g. http://jaeger:4318/v1/traces
