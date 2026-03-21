@@ -32,5 +32,12 @@ respx==0.21.1
 python-dotenv==1.0.1
 structlog==24.4.0
 
+# Observability — OpenTelemetry
+opentelemetry-api==1.27.0
+opentelemetry-sdk==1.27.0
+opentelemetry-exporter-otlp-proto-http==1.27.0
+opentelemetry-instrumentation-fastapi==0.48b0
+opentelemetry-instrumentation-httpx==0.48b0
+
 # CI / Dev
 ruff==0.9.10

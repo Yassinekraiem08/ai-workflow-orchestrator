@@ -5,10 +5,12 @@ from celery import Task
 from app.config import settings
 from app.core.orchestrator import OrchestratorInput, run_workflow
 from app.services.logging_service import get_logger
+from app.services.telemetry_service import get_tracer
 from app.utils.enums import InputType, RunStatus
 from app.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
+_tracer = get_tracer(__name__)
 
 
 @celery_app.task(
@@ -27,15 +29,23 @@ def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: s
     log.info("celery_task_started", attempt=self.request.retries + 1)
 
     try:
-        orchestrator_input = OrchestratorInput(
-            run_id=run_id,
-            input_type=InputType(input_type),
-            raw_input=raw_input,
-            priority=priority,
-        )
-        result = asyncio.run(run_workflow(orchestrator_input))
-        log.info("celery_task_completed", status=result.status)
-        return result.model_dump()
+        with _tracer.start_as_current_span(
+            "celery.workflow_task",
+            attributes={
+                "run_id": run_id,
+                "input_type": input_type,
+                "attempt": self.request.retries + 1,
+            },
+        ):
+            orchestrator_input = OrchestratorInput(
+                run_id=run_id,
+                input_type=InputType(input_type),
+                raw_input=raw_input,
+                priority=priority,
+            )
+            result = asyncio.run(run_workflow(orchestrator_input))
+            log.info("celery_task_completed", status=result.status)
+            return result.model_dump()
 
     except Exception as exc:
         log.error("celery_task_failed", error=str(exc), exc_info=True)

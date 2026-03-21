@@ -7,6 +7,18 @@ import structlog
 from app.config import settings
 
 
+def _inject_trace_id(logger: Any, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+    """Structlog processor that adds the current OTel trace_id to every log record."""
+    try:
+        from app.services.telemetry_service import get_current_trace_id
+        trace_id = get_current_trace_id()
+        if trace_id:
+            event_dict["trace_id"] = trace_id
+    except Exception:
+        pass
+    return event_dict
+
+
 def configure_logging() -> None:
     log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
 
@@ -17,6 +29,7 @@ def configure_logging() -> None:
             structlog.stdlib.add_log_level,
             structlog.stdlib.PositionalArgumentsFormatter(),
             structlog.processors.TimeStamper(fmt="iso"),
+            _inject_trace_id,
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),

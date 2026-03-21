@@ -25,6 +25,14 @@ services:
       timeout: 3s
       retries: 10
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.62
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
   api:
     build: .
     command: >
@@ -37,6 +45,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      OTEL_ENABLED: "true"
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,6 +64,8 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      OTEL_ENABLED: "true"
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     depends_on:
       postgres:
         condition: service_healthy

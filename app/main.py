@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.api import routes_health, routes_runs, routes_workflows
 from app.db.session import engine
 from app.services.logging_service import configure_logging
+from app.services.telemetry_service import setup_telemetry
 from app.tools.base import tool_registry
 from app.tools.database_tool import DatabaseQueryTool
 from app.tools.email_tool import EmailDraftTool
@@ -27,6 +28,7 @@ def register_tools() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     configure_logging()
+    setup_telemetry(app)
     register_tools()
 
     yield

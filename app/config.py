@@ -27,5 +27,9 @@ class Settings(BaseSettings):
     celery_retry_delay_seconds: int = 30
     max_replan_depth: int = 2  # max times re-planner can inject new steps per run
 
+    # Observability
+    otel_enabled: bool = False
+    otlp_endpoint: str = ""  # e.g. http://jaeger:4318/v1/traces
+
 
 settings = Settings()

@@ -12,10 +12,12 @@ from app.db.models import WorkflowStep
 from app.db.session import AsyncSessionFactory
 from app.services import workflow_service
 from app.services.logging_service import get_logger
+from app.services.telemetry_service import get_tracer
 from app.utils.enums import InputType, RunStatus
 from app.utils.exceptions import ClassificationError, OrchestratorError, PlanningError
 
 logger = get_logger(__name__)
+_tracer = get_tracer(__name__)
 
 _classifier = ClassifierAgent()
 _planner = PlannerAgent()
@@ -56,10 +58,14 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             # --- Step A: Classification ---
             log.info("classification_started")
             try:
-                classifier_result = await _classifier.run({
-                    "raw_input": input.raw_input,
-                    "input_type": input.input_type.value,
-                })
+                with _tracer.start_as_current_span(
+                    "workflow.classify",
+                    attributes={"run_id": run_id, "input_type": input.input_type.value},
+                ):
+                    classifier_result = await _classifier.run({
+                        "raw_input": input.raw_input,
+                        "input_type": input.input_type.value,
+                    })
                 classification = classifier_result.parsed_output
 
                 await workflow_service.record_llm_trace(
@@ -89,10 +95,14 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             # --- Step B: Planning ---
             log.info("planning_started")
             try:
-                planner_result = await _planner.run({
-                    "classification": classification,
-                    "raw_input": input.raw_input,
-                })
+                with _tracer.start_as_current_span(
+                    "workflow.plan",
+                    attributes={"run_id": run_id, "route": str(classification.get("route"))},
+                ):
+                    planner_result = await _planner.run({
+                        "classification": classification,
+                        "raw_input": input.raw_input,
+                    })
                 execution_plan = planner_result.parsed_output
 
                 await workflow_service.record_llm_trace(
@@ -126,12 +136,20 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                 run_context = await state_manager.get_context(run_id)
                 log.info("executing_step", step_name=step.step_name, step_order=step.step_order)
 
-                step_output = await executor.execute_step(
-                    db=db,
-                    step=step,
-                    run_context=run_context,
-                    raw_input=input.raw_input,
-                )
+                with _tracer.start_as_current_span(
+                    "workflow.step",
+                    attributes={
+                        "run_id": run_id,
+                        "step_name": step.step_name,
+                        "step_order": str(step.step_order),
+                    },
+                ):
+                    step_output = await executor.execute_step(
+                        db=db,
+                        step=step,
+                        run_context=run_context,
+                        raw_input=input.raw_input,
+                    )
                 steps_completed += 1
 
                 summary = step_output.get("summary", "")
