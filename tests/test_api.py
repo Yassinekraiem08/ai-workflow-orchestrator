@@ -62,7 +62,7 @@ def test_submit_workflow_valid(mock_session_factory, mock_create, mock_update, m
     mock_cm.__aexit__ = AsyncMock(return_value=None)
     mock_session_factory.return_value = mock_cm
 
-    mock_task.delay.return_value = MagicMock()
+    mock_task.apply_async.return_value = MagicMock()
 
     response = client.post("/workflows/submit", json={
         "input_type": "log",
@@ -223,8 +223,8 @@ def test_retry_dead_letter_run_requeues(mock_sf, mock_get, mock_reset, mock_upda
     mock_cm.__aenter__ = AsyncMock(return_value=mock_db)
     mock_cm.__aexit__ = AsyncMock(return_value=None)
     mock_sf.return_value = mock_cm
-    mock_task.delay.return_value = MagicMock()
+    mock_task.apply_async.return_value = MagicMock()
 
     response = client.post("/workflows/run_dead_001/retry")
     assert response.status_code == 202
-    mock_task.delay.assert_called_once()
+    mock_task.apply_async.assert_called_once()

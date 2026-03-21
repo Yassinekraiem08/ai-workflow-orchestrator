@@ -29,11 +29,16 @@ async def submit_workflow(
     )
 
     # Enqueue to Celery — status transitions to QUEUED after this
-    execute_workflow_task.delay(
-        run_id=run_id,
-        input_type=request.input_type.value,
-        raw_input=request.raw_input,
-        priority=request.priority,
+    # Celery priority is 0 (highest) → 9 (lowest); API priority is 1 (highest) → 9 (lowest)
+    celery_priority = 10 - request.priority
+    execute_workflow_task.apply_async(
+        kwargs={
+            "run_id": run_id,
+            "input_type": request.input_type.value,
+            "raw_input": request.raw_input,
+            "priority": request.priority,
+        },
+        priority=celery_priority,
     )
 
     await workflow_service.update_run_status(db, run_id, RunStatus.QUEUED)
@@ -59,11 +64,15 @@ async def retry_workflow(
         )
 
     await workflow_service.reset_run_for_retry(db, run_id)
-    execute_workflow_task.delay(
-        run_id=run_id,
-        input_type=run.input_type,
-        raw_input=run.raw_input,
-        priority=run.priority,
+    celery_priority = 10 - run.priority
+    execute_workflow_task.apply_async(
+        kwargs={
+            "run_id": run_id,
+            "input_type": run.input_type,
+            "raw_input": run.raw_input,
+            "priority": run.priority,
+        },
+        priority=celery_priority,
     )
     await workflow_service.update_run_status(db, run_id, RunStatus.QUEUED)
     await db.refresh(run)

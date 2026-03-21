@@ -63,7 +63,7 @@ PENDING → QUEUED → RUNNING → COMPLETED
 
 | Decision | Choice | Why |
 |---|---|---|
-| Agent outputs | Claude `tool_use` API | Forces structured JSON — eliminates hallucinated/malformed output |
+| Agent outputs | OpenAI function calling (`tool_choice: required`) | Forces structured JSON — eliminates hallucinated/malformed output |
 | State store | Redis (hot) + Postgres (write-through) | Sub-ms status checks with full audit trail |
 | Context passing | Shared `run_context` dict in Redis | Step N can reference any prior step's output |
 | Celery ↔ async | `asyncio.run()` in task body | Keeps core logic idiomatic async |
