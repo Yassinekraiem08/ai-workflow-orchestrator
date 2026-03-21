@@ -29,3 +29,5 @@ class ToolName(str, Enum):
     EMAIL_DRAFT = "email_draft"
     WEBHOOK = "webhook"
     DATABASE_QUERY = "database_query"
+    SLACK_NOTIFICATION = "slack_notification"
+    PAGERDUTY_INCIDENT = "pagerduty_incident"

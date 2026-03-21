@@ -10,6 +10,8 @@ from app.tools.base import tool_registry
 from app.tools.database_tool import DatabaseQueryTool
 from app.tools.email_tool import EmailDraftTool
 from app.tools.log_tool import LogAnalysisTool
+from app.tools.pagerduty_tool import PagerDutyIncidentTool
+from app.tools.slack_tool import SlackNotificationTool
 from app.tools.webhook_tool import WebhookTool
 
 
@@ -18,6 +20,8 @@ def register_tools() -> None:
     tool_registry.register(EmailDraftTool())
     tool_registry.register(WebhookTool())
     tool_registry.register(DatabaseQueryTool())
+    tool_registry.register(SlackNotificationTool())
+    tool_registry.register(PagerDutyIncidentTool())
 
 
 @asynccontextmanager

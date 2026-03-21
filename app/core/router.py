@@ -6,7 +6,8 @@ ROUTE_TOOL_PRIORITIES: dict[str, list[str]] = {
     "email_response": ["email_draft"],
     "ticket_escalation": ["database_query", "webhook", "email_draft"],
     "ticket_triage": ["database_query", "log_analysis"],
-    "incident_response": ["log_analysis", "database_query", "webhook"],
+    "incident_response": ["log_analysis", "database_query", "pagerduty_incident", "slack_notification"],
+    "incident_escalation": ["log_analysis", "database_query", "pagerduty_incident", "slack_notification"],
     "default": ["log_analysis", "database_query"],
 }
 
