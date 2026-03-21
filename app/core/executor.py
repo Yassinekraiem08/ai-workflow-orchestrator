@@ -7,6 +7,7 @@ from app.agents.executor_agent import ExecutorAgent
 from app.agents.fallback_agent import FallbackAgent
 from app.config import settings
 from app.core import state_manager
+from app.services.llm_service import estimate_cost
 from app.db.models import WorkflowStep
 from app.services import workflow_service
 from app.services.logging_service import get_logger
@@ -70,10 +71,15 @@ async def execute_step(
             run_id=run_id,
             agent_name="executor_agent",
             prompt_summary=f"Execute step: {step.step_name}",
-            model_name=settings.llm_model,
+            model_name=agent_result.model_name,
             tokens_in=agent_result.tokens_in,
             tokens_out=agent_result.tokens_out,
             latency_ms=agent_result.latency_ms,
+            estimated_cost_usd=estimate_cost(
+                agent_result.model_name,
+                agent_result.tokens_in,
+                agent_result.tokens_out,
+            ),
         )
 
         output = agent_result.parsed_output

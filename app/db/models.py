@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -17,6 +17,7 @@ class WorkflowRun(Base):
     raw_input: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    user_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     final_output: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -92,6 +93,7 @@ class LLMTrace(Base):
     tokens_in: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     tokens_out: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    estimated_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
     run: Mapped["WorkflowRun"] = relationship("WorkflowRun", back_populates="llm_traces")
 

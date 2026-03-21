@@ -15,6 +15,7 @@ def _make_mock_run(run_id: str = "run_abc123", status: str = "queued"):
     mock_run.status = status
     mock_run.input_type = "log"
     mock_run.priority = 5
+    mock_run.user_id = None
     mock_run.created_at = datetime.now(UTC)
     mock_run.updated_at = datetime.now(UTC)
     mock_run.final_output = None

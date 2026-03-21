@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.agents.base_agent import BaseAgent
+from app.config import settings
 from app.utils.enums import InputType
 from app.utils.exceptions import ClassificationError
 
@@ -16,6 +17,10 @@ class ClassificationOutput(BaseModel):
 
 
 class ClassifierAgent(BaseAgent):
+    @property
+    def model(self) -> str:
+        return settings.llm_model_fast
+
     @property
     def agent_name(self) -> str:
         return "classifier_agent"

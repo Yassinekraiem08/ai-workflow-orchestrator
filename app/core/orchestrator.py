@@ -8,6 +8,9 @@ from app.agents.planner_agent import PlannerAgent
 from app.agents.replanner_agent import RePlannerAgent
 from app.config import settings
 from app.core import executor, planner, router, state_manager
+from app.services.llm_service import estimate_cost
+from app.services.prometheus_service import WORKFLOW_COMPLETIONS, WORKFLOW_DURATION
+from app.utils.helpers import ms_since, utcnow as _utcnow
 from app.db.models import WorkflowStep
 from app.db.session import AsyncSessionFactory
 from app.services import workflow_service
@@ -29,6 +32,7 @@ class OrchestratorInput(BaseModel):
     input_type: InputType
     raw_input: str
     priority: int = 5
+    skip_confidence_check: bool = False  # set True when human has approved a needs_review run
 
 
 class OrchestratorResult(BaseModel):
@@ -49,6 +53,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
     run_id = input.run_id
     log = logger.bind(run_id=run_id, input_type=input.input_type)
     log.info("workflow_started")
+    _start_time = _utcnow()
 
     async with AsyncSessionFactory() as db:
         try:
@@ -73,11 +78,29 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                     run_id=run_id,
                     agent_name="classifier_agent",
                     prompt_summary=f"Classify: {input.raw_input[:100]}",
-                    model_name=settings.llm_model,
+                    model_name=classifier_result.model_name,
                     tokens_in=classifier_result.tokens_in,
                     tokens_out=classifier_result.tokens_out,
                     latency_ms=classifier_result.latency_ms,
+                    estimated_cost_usd=estimate_cost(
+                        classifier_result.model_name,
+                        classifier_result.tokens_in,
+                        classifier_result.tokens_out,
+                    ),
                 )
+
+                # Confidence gate: low-confidence classifications go to human review
+                confidence = classification.get("confidence", 1.0)
+                if confidence < settings.confidence_threshold and not input.skip_confidence_check:
+                    await workflow_service.update_run_status(db, run_id, RunStatus.NEEDS_REVIEW)
+                    await state_manager.set_status(run_id, RunStatus.NEEDS_REVIEW)
+                    log.info("workflow_needs_review", confidence=confidence, threshold=settings.confidence_threshold)
+                    return OrchestratorResult(
+                        run_id=run_id,
+                        status=RunStatus.NEEDS_REVIEW,
+                        final_output=f"Low classification confidence ({confidence:.0%}). Awaiting human review.",
+                    )
+
                 canonical_route = router.get_route(
                     task_type=input.input_type,
                     classification_route=classification.get("route"),
@@ -90,7 +113,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                 log.info("classification_done", task_type=classification.get("task_type"), route=canonical_route)
 
             except ClassificationError as e:
-                return await _fail_run(db, run_id, str(e), log)
+                return await _fail_run(db, run_id, str(e), log, input.input_type.value)
 
             # --- Step B: Planning ---
             log.info("planning_started")
@@ -110,10 +133,15 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                     run_id=run_id,
                     agent_name="planner_agent",
                     prompt_summary=f"Plan for route: {classification.get('route')}",
-                    model_name=settings.llm_model,
+                    model_name=planner_result.model_name,
                     tokens_in=planner_result.tokens_in,
                     tokens_out=planner_result.tokens_out,
                     latency_ms=planner_result.latency_ms,
+                    estimated_cost_usd=estimate_cost(
+                        planner_result.model_name,
+                        planner_result.tokens_in,
+                        planner_result.tokens_out,
+                    ),
                 )
                 await state_manager.update_context(run_id, {"execution_plan": execution_plan})
 
@@ -121,7 +149,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                 log.info("planning_done", total_steps=len(initial_steps))
 
             except PlanningError as e:
-                return await _fail_run(db, run_id, str(e), log)
+                return await _fail_run(db, run_id, str(e), log, input.input_type.value)
 
             # --- Step C: Dynamic execution loop ---
             remaining_steps: list[WorkflowStep] = list(initial_steps)
@@ -184,6 +212,9 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
 
             await workflow_service.update_run_status(db, run_id, RunStatus.COMPLETED, final_output)
             await state_manager.set_status(run_id, RunStatus.COMPLETED)
+            duration_s = ms_since(_start_time) / 1000
+            WORKFLOW_COMPLETIONS.labels(input_type=input.input_type.value, status="completed").inc()
+            WORKFLOW_DURATION.labels(input_type=input.input_type.value).observe(duration_s)
             log.info("workflow_completed", steps_completed=steps_completed, replan_count=replan_count)
 
             return OrchestratorResult(
@@ -196,10 +227,10 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             )
 
         except OrchestratorError as e:
-            return await _fail_run(db, run_id, str(e), log)
+            return await _fail_run(db, run_id, str(e), log, input.input_type.value)
         except Exception as e:
             log.error("unexpected_error", error=str(e), exc_info=True)
-            return await _fail_run(db, run_id, f"Unexpected error: {e}", log)
+            return await _fail_run(db, run_id, f"Unexpected error: {e}", log, input.input_type.value)
 
 
 async def _maybe_replan(
@@ -242,10 +273,15 @@ async def _maybe_replan(
             run_id=run_id,
             agent_name="replanner_agent",
             prompt_summary=f"Replan after: {step_output.get('step_name')}",
-            model_name=settings.llm_model,
+            model_name=replan_result.model_name,
             tokens_in=replan_result.tokens_in,
             tokens_out=replan_result.tokens_out,
             latency_ms=replan_result.latency_ms,
+            estimated_cost_usd=estimate_cost(
+                replan_result.model_name,
+                replan_result.tokens_in,
+                replan_result.tokens_out,
+            ),
         )
 
         decision = replan_result.parsed_output
@@ -267,11 +303,12 @@ async def _maybe_replan(
         return []
 
 
-async def _fail_run(db: AsyncSession, run_id: str, error: str, log: Any) -> OrchestratorResult:
+async def _fail_run(db: AsyncSession, run_id: str, error: str, log: Any, input_type: str = "unknown") -> OrchestratorResult:
     log.error("workflow_failed", error=error)
     try:
         await workflow_service.update_run_status(db, run_id, RunStatus.FAILED)
         await state_manager.set_status(run_id, RunStatus.FAILED)
+        WORKFLOW_COMPLETIONS.labels(input_type=input_type, status="failed").inc()
     except Exception:
         pass
     return OrchestratorResult(run_id=run_id, status=RunStatus.FAILED, error=error)

@@ -5,7 +5,8 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.services import llm_service
-from app.services.llm_service import LLMRequest, LLMResponse
+from app.services.llm_service import LLMRequest, LLMResponse, estimate_cost
+from app.services.prometheus_service import LLM_CALLS, LLM_COST_USD, LLM_TOKENS
 from app.utils.exceptions import LLMResponseError
 
 
@@ -16,11 +17,16 @@ class AgentResult(BaseModel):
     tokens_in: int
     tokens_out: int
     latency_ms: int
+    model_name: str = ""
 
 
 class BaseAgent(ABC):
-    model: str = settings.llm_model
     max_retries: int = 2
+
+    @property
+    def model(self) -> str:
+        """The LLM model this agent uses. Override in subclasses for cost routing."""
+        return settings.llm_model
 
     @property
     @abstractmethod
@@ -54,6 +60,7 @@ class BaseAgent(ABC):
                     messages=self.build_messages(context),
                     system=self.build_system_prompt(),
                     tools=[self.get_output_tool_definition()],
+                    model=self.model,
                     max_tokens=4096,
                     temperature=0.1,
                 )
@@ -69,13 +76,23 @@ class BaseAgent(ABC):
                 tool_call = response.tool_calls[0]
                 parsed = self.parse_tool_call(tool_call["input"])
 
+                tokens_in = response.usage.get("input_tokens", 0)
+                tokens_out = response.usage.get("output_tokens", 0)
+                cost = estimate_cost(self.model, tokens_in, tokens_out)
+
+                LLM_CALLS.labels(model=self.model, agent=self.agent_name).inc()
+                LLM_TOKENS.labels(model=self.model, agent=self.agent_name, direction="in").inc(tokens_in)
+                LLM_TOKENS.labels(model=self.model, agent=self.agent_name, direction="out").inc(tokens_out)
+                LLM_COST_USD.labels(model=self.model, agent=self.agent_name).inc(cost)
+
                 return AgentResult(
                     agent_name=self.agent_name,
                     raw_response=str(tool_call["input"]),
                     parsed_output=parsed,
-                    tokens_in=response.usage.get("input_tokens", 0),
-                    tokens_out=response.usage.get("output_tokens", 0),
+                    tokens_in=tokens_in,
+                    tokens_out=tokens_out,
                     latency_ms=response.latency_ms,
+                    model_name=self.model,
                 )
 
             except LLMResponseError as e:

@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
+    # LLM model routing
+    llm_model_fast: str = "gpt-4o-mini"   # classifier, planner, replanner, fallback
+    llm_model_strong: str = "gpt-4o"      # executor agent
+
+    # Human-in-the-loop threshold
+    confidence_threshold: float = 0.65    # classifier confidence below this → needs_review
+
     # Observability
     otel_enabled: bool = False
     otlp_endpoint: str = ""  # e.g. http://jaeger:4318/v1/traces

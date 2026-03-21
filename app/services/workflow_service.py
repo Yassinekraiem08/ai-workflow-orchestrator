@@ -15,6 +15,7 @@ async def create_run(
     input_type: str,
     raw_input: str,
     priority: int,
+    user_id: str | None = None,
 ) -> WorkflowRun:
     now = utcnow()
     run = WorkflowRun(
@@ -23,6 +24,7 @@ async def create_run(
         raw_input=raw_input,
         status=RunStatus.PENDING,
         priority=priority,
+        user_id=user_id,
         created_at=now,
         updated_at=now,
     )
@@ -148,6 +150,7 @@ async def record_llm_trace(
     tokens_in: int,
     tokens_out: int,
     latency_ms: int,
+    estimated_cost_usd: float = 0.0,
 ) -> None:
     trace = LLMTrace(
         id=generate_trace_id(),
@@ -158,9 +161,20 @@ async def record_llm_trace(
         tokens_in=tokens_in,
         tokens_out=tokens_out,
         latency_ms=latency_ms,
+        estimated_cost_usd=estimated_cost_usd,
     )
     db.add(trace)
     await db.commit()
+
+
+async def get_review_queue(db: AsyncSession) -> list[WorkflowRun]:
+    """Returns all runs awaiting human review, ordered by priority then creation time."""
+    result = await db.execute(
+        select(WorkflowRun)
+        .where(WorkflowRun.status == RunStatus.NEEDS_REVIEW.value)
+        .order_by(WorkflowRun.priority.asc(), WorkflowRun.created_at.asc())
+    )
+    return list(result.scalars().all())
 
 
 async def reset_run_for_retry(db: AsyncSession, run_id: str) -> None:

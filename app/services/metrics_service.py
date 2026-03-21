@@ -27,12 +27,13 @@ async def get_metrics(db: AsyncSession) -> dict[str, Any]:
 
     success_rate = (completed / total_runs) if total_runs > 0 else 0.0
 
-    # Token usage
+    # Token usage and cost
     token_result = await db.execute(
         select(
             func.sum(LLMTrace.tokens_in).label("total_in"),
             func.sum(LLMTrace.tokens_out).label("total_out"),
             func.avg(LLMTrace.latency_ms).label("avg_latency"),
+            func.sum(LLMTrace.estimated_cost_usd).label("total_cost"),
         )
     )
     token_row = token_result.one()
@@ -53,6 +54,7 @@ async def get_metrics(db: AsyncSession) -> dict[str, Any]:
         "avg_latency_ms": round(float(token_row.avg_latency or 0), 2),
         "total_tokens_in": int(token_row.total_in or 0),
         "total_tokens_out": int(token_row.total_out or 0),
+        "total_cost_usd": round(float(token_row.total_cost or 0.0), 6),
         "failure_breakdown": {
             "by_status": status_counts,
             "by_tool": tool_failures,

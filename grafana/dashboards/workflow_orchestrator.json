@@ -1,0 +1,101 @@
+{
+  "title": "AI Workflow Orchestrator",
+  "uid": "ai-workflow-orchestrator",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Workflow Submission Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(workflow_submissions_total[5m])",
+        "legendFormat": "{{input_type}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Workflow Completions by Status",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(workflow_completions_total[5m])",
+        "legendFormat": "{{input_type}} / {{status}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 3,
+      "title": "LLM Cost Rate (USD/hour)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(llm_cost_usd_total[5m]) * 3600",
+        "legendFormat": "{{model}} / {{agent}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "LLM Token Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(llm_tokens_total[5m])",
+        "legendFormat": "{{model}} {{direction}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "tokens/s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Workflow Duration p50 / p95 (seconds)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.50, rate(workflow_duration_seconds_bucket[5m]))",
+          "legendFormat": "p50 {{input_type}}"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "histogram_quantile(0.95, rate(workflow_duration_seconds_bucket[5m]))",
+          "legendFormat": "p95 {{input_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 6,
+      "title": "LLM Calls Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [{
+        "datasource": "Prometheus",
+        "expr": "rate(llm_calls_total[5m])",
+        "legendFormat": "{{model}} / {{agent}}"
+      }],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      }
+    }
+  ]
+}

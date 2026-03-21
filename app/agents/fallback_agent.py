@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.agents.base_agent import BaseAgent
+from app.config import settings
 
 
 class FallbackOutput(BaseModel):
@@ -14,6 +15,10 @@ class FallbackOutput(BaseModel):
 
 
 class FallbackAgent(BaseAgent):
+    @property
+    def model(self) -> str:
+        return settings.llm_model_fast
+
     """
     Triggered when a step fails after tool retries, or when the ExecutorAgent
     output fails Pydantic validation twice. Produces a safe default response

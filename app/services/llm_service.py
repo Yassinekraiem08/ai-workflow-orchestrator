@@ -15,6 +15,23 @@ class LLMRequest(BaseModel):
     tools: list[dict[str, Any]] | None = None
     max_tokens: int = 4096
     temperature: float = 0.1
+    model: str | None = None  # overrides settings.llm_model when set
+
+
+# Pricing per 1K tokens (input, output) as of 2026
+_COST_PER_1K: dict[str, dict[str, float]] = {
+    "gpt-4o":      {"input": 0.0025,  "output": 0.010},
+    "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
+}
+
+
+def estimate_cost(model: str, tokens_in: int, tokens_out: int) -> float:
+    """Returns estimated USD cost for an LLM call."""
+    prices = _COST_PER_1K.get(model, _COST_PER_1K["gpt-4o"])
+    return round(
+        (tokens_in / 1000) * prices["input"] + (tokens_out / 1000) * prices["output"],
+        6,
+    )
 
 
 class LLMResponse(BaseModel):
@@ -49,7 +66,7 @@ async def complete(request: LLMRequest) -> LLMResponse:
     start: datetime = utcnow()
 
     response = await client.chat.completions.create(
-        model=settings.llm_model,
+        model=request.model or settings.llm_model,
         messages=_build_messages(request),
         max_tokens=request.max_tokens,
         temperature=request.temperature,
@@ -85,7 +102,7 @@ async def complete_with_tools(request: LLMRequest) -> LLMResponse:
     )
 
     response = await client.chat.completions.create(
-        model=settings.llm_model,
+        model=request.model or settings.llm_model,
         messages=_build_messages(request),
         tools=tools,
         tool_choice=tool_choice,

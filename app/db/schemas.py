@@ -26,6 +26,7 @@ class WorkflowRunResponse(BaseModel):
     status: RunStatus
     input_type: InputType
     priority: int
+    user_id: str | None = None
     created_at: datetime
     updated_at: datetime
     final_output: str | None = None
@@ -37,6 +38,7 @@ class WorkflowRunResponse(BaseModel):
             status=run.status,
             input_type=run.input_type,
             priority=run.priority,
+            user_id=getattr(run, "user_id", None),
             created_at=run.created_at,
             updated_at=run.updated_at,
             final_output=run.final_output,
@@ -94,4 +96,5 @@ class MetricsResponse(BaseModel):
     avg_latency_ms: float
     total_tokens_in: int
     total_tokens_out: int
+    total_cost_usd: float = 0.0
     failure_breakdown: FailureBreakdown

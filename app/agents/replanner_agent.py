@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.agents.base_agent import BaseAgent
+from app.config import settings
 from app.utils.exceptions import LLMResponseError
 
 
@@ -20,6 +21,10 @@ class RePlanningDecision(BaseModel):
 
 
 class RePlannerAgent(BaseAgent):
+    @property
+    def model(self) -> str:
+        return settings.llm_model_fast
+
     """
     Invoked after a high-severity step completes. Evaluates findings and
     decides whether to inject new investigative steps before continuing.

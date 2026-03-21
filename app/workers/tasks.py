@@ -21,7 +21,7 @@ _tracer = get_tracer(__name__)
     default_retry_delay=settings.celery_retry_delay_seconds,
     queue="workflows",
 )
-def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: str, priority: int = 5) -> dict:
+def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: str, priority: int = 5, skip_confidence_check: bool = False) -> dict:
     """
     Celery task that drives a full workflow run.
     Uses asyncio.run() to bridge sync Celery and async orchestrator.
@@ -43,6 +43,7 @@ def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: s
                 input_type=InputType(input_type),
                 raw_input=raw_input,
                 priority=priority,
+                skip_confidence_check=skip_confidence_check,
             )
             reset_redis_client()
             result = asyncio.run(run_workflow(orchestrator_input))

@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.agents.base_agent import BaseAgent
+from app.config import settings
 from app.utils.exceptions import LLMResponseError
 
 
@@ -17,6 +18,10 @@ class StepExecutionOutput(BaseModel):
 
 
 class ExecutorAgent(BaseAgent):
+    @property
+    def model(self) -> str:
+        return settings.llm_model_strong  # executor needs the strongest model
+
     @property
     def agent_name(self) -> str:
         return "executor_agent"

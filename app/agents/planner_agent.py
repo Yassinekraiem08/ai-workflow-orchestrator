@@ -3,6 +3,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.agents.base_agent import BaseAgent
+from app.config import settings
 from app.utils.exceptions import PlanningError
 
 
@@ -21,6 +22,10 @@ class ExecutionPlan(BaseModel):
 
 
 class PlannerAgent(BaseAgent):
+    @property
+    def model(self) -> str:
+        return settings.llm_model_fast
+
     @property
     def agent_name(self) -> str:
         return "planner_agent"

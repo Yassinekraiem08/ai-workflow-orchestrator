@@ -14,6 +14,7 @@ class RunStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     DEAD_LETTER = "dead_letter"
+    NEEDS_REVIEW = "needs_review"
 
 
 class StepStatus(str, Enum):

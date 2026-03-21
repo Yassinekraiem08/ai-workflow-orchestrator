@@ -7,6 +7,7 @@ from app.db.session import get_db
 from app.services import workflow_service
 from app.utils.enums import RunStatus
 from app.utils.exceptions import WorkflowNotFoundError
+from app.services.prometheus_service import WORKFLOW_SUBMISSIONS
 from app.utils.helpers import generate_run_id
 from app.workers.tasks import execute_workflow_task
 
@@ -17,8 +18,10 @@ router = APIRouter(prefix="/workflows", tags=["workflows"], dependencies=[Depend
 async def submit_workflow(
     request: WorkflowSubmitRequest,
     db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(require_auth),
 ) -> WorkflowRunResponse:
     run_id = generate_run_id()
+    WORKFLOW_SUBMISSIONS.labels(input_type=request.input_type.value).inc()
 
     run = await workflow_service.create_run(
         db=db,
@@ -26,9 +29,9 @@ async def submit_workflow(
         input_type=request.input_type.value,
         raw_input=request.raw_input,
         priority=request.priority,
+        user_id=user_id,
     )
 
-    # Enqueue to Celery — status transitions to QUEUED after this
     # Celery priority is 0 (highest) → 9 (lowest); API priority is 1 (highest) → 9 (lowest)
     celery_priority = 10 - request.priority
     execute_workflow_task.apply_async(
@@ -71,6 +74,44 @@ async def retry_workflow(
             "input_type": run.input_type,
             "raw_input": run.raw_input,
             "priority": run.priority,
+        },
+        priority=celery_priority,
+    )
+    await workflow_service.update_run_status(db, run_id, RunStatus.QUEUED)
+    await db.refresh(run)
+
+    return WorkflowRunResponse.from_orm_run(run)
+
+
+@router.post("/{run_id}/approve", response_model=WorkflowRunResponse, status_code=status.HTTP_202_ACCEPTED)
+async def approve_workflow(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> WorkflowRunResponse:
+    """
+    Approve a workflow that was held for human review (needs_review status).
+    Overrides the confidence gate and re-enqueues with full execution.
+    """
+    try:
+        run = await workflow_service.get_run(db, run_id)
+    except WorkflowNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Workflow run '{run_id}' not found") from None
+
+    if run.status != RunStatus.NEEDS_REVIEW.value:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot approve workflow in status '{run.status}'. Only needs_review runs can be approved.",
+        )
+
+    await workflow_service.reset_run_for_retry(db, run_id)
+    celery_priority = 10 - run.priority
+    execute_workflow_task.apply_async(
+        kwargs={
+            "run_id": run_id,
+            "input_type": run.input_type,
+            "raw_input": run.raw_input,
+            "priority": run.priority,
+            "skip_confidence_check": True,
         },
         priority=celery_priority,
     )
