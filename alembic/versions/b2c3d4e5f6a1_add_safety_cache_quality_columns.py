@@ -1,9 +1,15 @@
 """add safety, cache, and quality columns to workflow_runs
 
-Revision ID: a1b2c3d4e5f6
-Revises: 89631f200021
+Revision ID: b2c3d4e5f6a1
+Revises: a1b2c3d4e5f6
 Create Date: 2026-03-22
 
+Adds:
+  - workflow_runs.safety_flagged   — whether input was blocked by safety filter
+  - workflow_runs.safety_reason    — reason text for safety violations
+  - workflow_runs.cache_hit        — whether output was served from semantic cache
+  - workflow_runs.quality_score    — LLM-as-judge overall score (0-1)
+  - workflow_runs.quality_breakdown — per-dimension judge scores (JSON)
 """
 from collections.abc import Sequence
 
@@ -11,8 +17,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "a1b2c3d4e5f6"
-down_revision: str | None = "89631f200021"
+revision: str = "b2c3d4e5f6a1"
+down_revision: str | None = "a1b2c3d4e5f6"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
