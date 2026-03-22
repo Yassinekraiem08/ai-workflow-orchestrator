@@ -19,6 +19,10 @@ export interface WorkflowRun {
   created_at: string;
   updated_at: string;
   final_output: string | null;
+  quality_score: number | null;
+  quality_breakdown: Record<string, number> | null;
+  cache_hit: boolean;
+  safety_flagged: boolean;
 }
 
 export interface WorkflowStep {
