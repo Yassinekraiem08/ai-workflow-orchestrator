@@ -25,3 +25,11 @@ htmlcov/
 
 # Alembic
 alembic/versions/*.pyc
+
+# Terraform — never commit real secrets or local state
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/tfplan
+terraform/*.tfstate
+terraform/*.tfstate.backup

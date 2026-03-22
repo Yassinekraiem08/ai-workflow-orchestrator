@@ -1,0 +1,89 @@
+# Continuous deployment to AWS ECS on every push to main.
+#
+# Required GitHub secrets:
+#   AWS_ROLE_ARN      — ARN of the IAM role configured for OIDC federation
+#                       (e.g. arn:aws:iam::123456789012:role/github-actions-deploy)
+#   AWS_REGION        — Target AWS region (e.g. us-east-1)
+#   ECR_REPOSITORY    — ECR repository name (e.g. ai-workflow-orchestrator)
+#
+# The IAM role trust policy must allow the GitHub OIDC provider to assume it.
+# See docs/aws-deployment.md for the exact trust policy and setup steps.
+
+name: Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write   # Required for OIDC token exchange
+  contents: read
+
+env:
+  ECS_CLUSTER:      ai-workflow-orchestrator-production
+  ECS_SERVICE_API:  ai-workflow-orchestrator-production-api
+  ECS_SERVICE_WORKER: ai-workflow-orchestrator-production-worker
+
+jobs:
+  deploy:
+    name: Build, push, and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: build
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          SHA: ${{ github.sha }}
+        run: |
+          IMAGE_URI="$REGISTRY/$REPOSITORY"
+
+          docker build \
+            --tag "$IMAGE_URI:$SHA" \
+            --tag "$IMAGE_URI:latest" \
+            --cache-from "$IMAGE_URI:latest" \
+            .
+
+          docker push "$IMAGE_URI:$SHA"
+          docker push "$IMAGE_URI:latest"
+
+          echo "image=$IMAGE_URI:$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Force new deployment — API service
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE_API" \
+            --force-new-deployment \
+            --output text \
+            --query 'service.serviceName'
+
+      - name: Force new deployment — worker service
+        run: |
+          aws ecs update-service \
+            --cluster "$ECS_CLUSTER" \
+            --service "$ECS_SERVICE_WORKER" \
+            --force-new-deployment \
+            --output text \
+            --query 'service.serviceName'
+
+      - name: Wait for API service to stabilize
+        run: |
+          aws ecs wait services-stable \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE_API"

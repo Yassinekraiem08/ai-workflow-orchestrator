@@ -1,0 +1,17 @@
+aws_region   = "us-east-1"
+project_name = "ai-workflow-orchestrator"
+environment  = "production"
+
+# Secrets — replace every value before applying.
+# Do NOT commit terraform.tfvars to source control.
+db_password    = "change-me-strong-password"
+openai_api_key = "sk-..."
+api_keys       = "your-api-key-here"
+jwt_secret     = "change-me-long-random-string-min-32-chars"
+
+# ECS task sizing — defaults match the variable declarations.
+# Uncomment and adjust if you need to right-size for your workload.
+# api_cpu       = 512
+# api_memory    = 1024
+# worker_cpu    = 1024
+# worker_memory = 2048
