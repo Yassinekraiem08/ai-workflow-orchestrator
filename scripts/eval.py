@@ -25,7 +25,7 @@ Environment variables:
 import os
 import statistics
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import httpx
 
@@ -305,7 +305,7 @@ def main() -> None:
         print(f"\nPolling {len([r for r in run_ids if r])} runs (up to {TIMEOUT}s each)...\n")
 
         # Poll each run
-        for i, (case, run_id) in enumerate(zip(EVAL_CASES, run_ids)):
+        for i, (case, run_id) in enumerate(zip(EVAL_CASES, run_ids, strict=False)):
             result = RunResult(
                 case_idx=i + 1,
                 input_type=case["input_type"],

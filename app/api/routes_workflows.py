@@ -5,9 +5,9 @@ from app.api.deps import require_auth
 from app.db.schemas import WorkflowRunResponse, WorkflowSubmitRequest
 from app.db.session import get_db
 from app.services import workflow_service
+from app.services.prometheus_service import WORKFLOW_SUBMISSIONS
 from app.utils.enums import RunStatus
 from app.utils.exceptions import WorkflowNotFoundError
-from app.services.prometheus_service import WORKFLOW_SUBMISSIONS
 from app.utils.helpers import generate_run_id
 from app.workers.tasks import execute_workflow_task
 
