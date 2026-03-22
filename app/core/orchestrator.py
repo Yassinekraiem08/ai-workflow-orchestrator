@@ -11,9 +11,13 @@ from app.config import settings
 from app.core import executor, planner, router, state_manager
 from app.db.models import WorkflowStep
 from app.services import workflow_service
+from app.services.cache_service import check_cache
+from app.services.cache_service import store as cache_store
+from app.services.judge_service import evaluate_output
 from app.services.llm_service import estimate_cost
 from app.services.logging_service import get_logger
 from app.services.prometheus_service import WORKFLOW_COMPLETIONS, WORKFLOW_DURATION
+from app.services.safety_service import check_safety
 from app.services.telemetry_service import get_tracer
 from app.utils.enums import InputType, RunStatus
 from app.utils.exceptions import ClassificationError, OrchestratorError, PlanningError
@@ -60,6 +64,45 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
         try:
             await state_manager.set_status(run_id, RunStatus.RUNNING)
             await workflow_service.update_run_status(db, run_id, RunStatus.RUNNING)
+
+            # --- Safety gate (runs before any LLM processing) ---
+            if settings.enable_safety_check:
+                safety_result = await check_safety(input.raw_input)
+                if not safety_result.safe:
+                    output = (
+                        f"Input blocked by safety filter.\n"
+                        f"Category: {safety_result.category}\n"
+                        f"Reason: {safety_result.reason}"
+                    )
+                    await workflow_service.update_run_safety(db, run_id, True, safety_result.reason)
+                    await workflow_service.update_run_status(db, run_id, RunStatus.SAFETY_BLOCKED, output)
+                    await state_manager.set_status(run_id, RunStatus.SAFETY_BLOCKED)
+                    log.warning("workflow_safety_blocked", category=safety_result.category)
+                    return OrchestratorResult(
+                        run_id=run_id,
+                        status=RunStatus.SAFETY_BLOCKED,
+                        final_output=output,
+                    )
+
+            # --- Semantic cache check ---
+            if settings.enable_semantic_cache and not input.skip_confidence_check:
+                cache_hit = await check_cache(input.raw_input)
+                if cache_hit:
+                    cached_output = (
+                        f"{cache_hit.final_output}\n\n"
+                        f"[Served from semantic cache — similarity {cache_hit.similarity:.1%} "
+                        f"with run {cache_hit.run_id}]"
+                    )
+                    await workflow_service.update_run_cache_hit(db, run_id, True)
+                    await workflow_service.update_run_status(db, run_id, RunStatus.COMPLETED, cached_output)
+                    await state_manager.set_status(run_id, RunStatus.COMPLETED)
+                    WORKFLOW_COMPLETIONS.labels(input_type=input.input_type.value, status="completed").inc()
+                    log.info("workflow_cache_hit", source_run_id=cache_hit.run_id, similarity=cache_hit.similarity)
+                    return OrchestratorResult(
+                        run_id=run_id,
+                        status=RunStatus.COMPLETED,
+                        final_output=cached_output,
+                    )
 
             # --- Step A: Classification ---
             log.info("classification_started")
@@ -216,6 +259,30 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             duration_s = ms_since(_start_time) / 1000
             WORKFLOW_COMPLETIONS.labels(input_type=input.input_type.value, status="completed").inc()
             WORKFLOW_DURATION.labels(input_type=input.input_type.value).observe(duration_s)
+
+            # --- LLM-as-judge quality evaluation ---
+            quality_score: float | None = None
+            if settings.enable_judge:
+                judge_result = await evaluate_output(
+                    input_type=input.input_type.value,
+                    raw_input=input.raw_input,
+                    final_output=final_output,
+                )
+                if judge_result:
+                    quality_score = judge_result.overall_score
+                    await workflow_service.update_run_quality(
+                        db, run_id, judge_result.overall_score, judge_result.dimensions
+                    )
+                    log.info("judge_score", overall=judge_result.overall_score)
+
+            # --- Store in semantic cache for future deduplication ---
+            await cache_store(
+                run_id=run_id,
+                raw_input=input.raw_input,
+                final_output=final_output,
+                quality_score=quality_score,
+            )
+
             log.info("workflow_completed", steps_completed=steps_completed, replan_count=replan_count)
 
             return OrchestratorResult(

@@ -46,6 +46,26 @@ async def get_metrics(db: AsyncSession) -> dict[str, Any]:
     )
     tool_failures = {row.tool_name: row.count for row in tool_failures_result}
 
+    # LLM-as-judge average quality score
+    quality_result = await db.execute(
+        select(func.avg(WorkflowRun.quality_score).label("avg_quality"))
+        .where(WorkflowRun.quality_score.isnot(None))
+    )
+    avg_quality = quality_result.scalar()
+
+    # Semantic cache hit rate
+    cache_hits_result = await db.execute(
+        select(func.count(WorkflowRun.id)).where(WorkflowRun.cache_hit == True)  # noqa: E712
+    )
+    cache_hits = cache_hits_result.scalar() or 0
+    cache_hit_rate = round(cache_hits / total_runs, 4) if total_runs > 0 else 0.0
+
+    # Safety violations
+    safety_result = await db.execute(
+        select(func.count(WorkflowRun.id)).where(WorkflowRun.safety_flagged == True)  # noqa: E712
+    )
+    safety_violations = safety_result.scalar() or 0
+
     return {
         "total_runs": total_runs,
         "completed_runs": completed,
@@ -59,4 +79,7 @@ async def get_metrics(db: AsyncSession) -> dict[str, Any]:
             "by_status": status_counts,
             "by_tool": tool_failures,
         },
+        "avg_quality_score": round(float(avg_quality), 3) if avg_quality is not None else None,
+        "cache_hit_rate": cache_hit_rate,
+        "safety_violations": int(safety_violations),
     }

@@ -22,6 +22,17 @@ class WorkflowRun(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     final_output: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Safety layer
+    safety_flagged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    safety_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Semantic cache
+    cache_hit: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # LLM-as-judge
+    quality_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    quality_breakdown: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
     steps: Mapped[list["WorkflowStep"]] = relationship(
         "WorkflowStep", back_populates="run", cascade="all, delete-orphan"
     )

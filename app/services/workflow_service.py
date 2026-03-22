@@ -183,3 +183,36 @@ async def reset_run_for_retry(db: AsyncSession, run_id: str) -> None:
     run.updated_at = utcnow()
     run.final_output = None
     await db.commit()
+
+
+async def update_run_quality(
+    db: AsyncSession,
+    run_id: str,
+    quality_score: float,
+    quality_breakdown: dict,
+) -> None:
+    run = await get_run(db, run_id)
+    run.quality_score = quality_score
+    run.quality_breakdown = quality_breakdown
+    run.updated_at = utcnow()
+    await db.commit()
+
+
+async def update_run_safety(
+    db: AsyncSession,
+    run_id: str,
+    flagged: bool,
+    reason: str | None,
+) -> None:
+    run = await get_run(db, run_id)
+    run.safety_flagged = flagged
+    run.safety_reason = reason
+    run.updated_at = utcnow()
+    await db.commit()
+
+
+async def update_run_cache_hit(db: AsyncSession, run_id: str, cache_hit: bool) -> None:
+    run = await get_run(db, run_id)
+    run.cache_hit = cache_hit
+    run.updated_at = utcnow()
+    await db.commit()

@@ -30,6 +30,10 @@ class WorkflowRunResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     final_output: str | None = None
+    quality_score: float | None = None
+    quality_breakdown: dict[str, Any] | None = None
+    cache_hit: bool = False
+    safety_flagged: bool = False
 
     @classmethod
     def from_orm_run(cls, run: Any) -> "WorkflowRunResponse":
@@ -42,6 +46,10 @@ class WorkflowRunResponse(BaseModel):
             created_at=run.created_at,
             updated_at=run.updated_at,
             final_output=run.final_output,
+            quality_score=getattr(run, "quality_score", None),
+            quality_breakdown=getattr(run, "quality_breakdown", None),
+            cache_hit=getattr(run, "cache_hit", False),
+            safety_flagged=getattr(run, "safety_flagged", False),
         )
 
 
@@ -98,3 +106,6 @@ class MetricsResponse(BaseModel):
     total_tokens_out: int
     total_cost_usd: float = 0.0
     failure_breakdown: FailureBreakdown
+    avg_quality_score: float | None = None
+    cache_hit_rate: float = 0.0
+    safety_violations: int = 0

@@ -44,5 +44,18 @@ class Settings(BaseSettings):
     otel_enabled: bool = False
     otlp_endpoint: str = ""  # e.g. http://jaeger:4318/v1/traces
 
+    # Safety layer
+    enable_safety_check: bool = True
+
+    # LLM-as-judge
+    enable_judge: bool = True
+    judge_model: str = "gpt-4o-mini"  # cheap + fast; upgrade to gpt-4o for higher fidelity
+
+    # Semantic cache
+    enable_semantic_cache: bool = True
+    semantic_cache_threshold: float = 0.92   # cosine similarity required for a cache hit
+    semantic_cache_max_entries: int = 500     # rolling window of embeddings kept in Redis
+    embedding_model: str = "text-embedding-3-small"  # 1536-dim, ~$0.00002/1K tokens
+
 
 settings = Settings()
