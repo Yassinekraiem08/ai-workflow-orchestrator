@@ -515,6 +515,48 @@ export default function HomePage() {
             </div>
           )}
 
+          {/* ML feature badges */}
+          {run && isTerminal && (
+            <div className="flex flex-wrap gap-2 animate-fade-in">
+              {run.cache_hit && (
+                <span className="text-xs px-3 py-1 rounded-full bg-cyan-900/50 border border-cyan-700/60 text-cyan-300 font-medium">
+                  ⚡ Served from semantic cache
+                </span>
+              )}
+              {run.safety_flagged && (
+                <span className="text-xs px-3 py-1 rounded-full bg-red-900/50 border border-red-700/60 text-red-300 font-medium">
+                  🛡 Blocked by safety filter
+                </span>
+              )}
+              {run.quality_score !== null && run.quality_score !== undefined && (
+                <span className={`text-xs px-3 py-1 rounded-full border font-medium ${
+                  run.quality_score >= 0.7
+                    ? "bg-emerald-900/50 border-emerald-700/60 text-emerald-300"
+                    : run.quality_score >= 0.4
+                    ? "bg-yellow-900/50 border-yellow-700/60 text-yellow-300"
+                    : "bg-red-900/50 border-red-700/60 text-red-300"
+                }`}>
+                  🧑‍⚖️ Quality score: {(run.quality_score * 100).toFixed(0)}%
+                </span>
+              )}
+              {run.quality_breakdown && (
+                <details className="w-full mt-1">
+                  <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors">
+                    View quality breakdown
+                  </summary>
+                  <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {Object.entries(run.quality_breakdown).map(([dim, score]) => (
+                      <div key={dim} className="bg-gray-800/60 border border-gray-700 rounded-lg p-2 text-center">
+                        <div className="text-sm font-bold text-indigo-400">{((score as number) * 100).toFixed(0)}%</div>
+                        <div className="text-xs text-gray-500 mt-0.5 capitalize">{dim}</div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+
           {/* Final output */}
           {run?.final_output && (
             <div className="animate-fade-in">
