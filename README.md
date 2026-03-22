@@ -21,6 +21,8 @@ This project is that system.
 
 ## Architecture
 
+![System Architecture](docs/architecture.svg)
+
 ```
 Client (Bearer JWT or X-API-Key)
   │

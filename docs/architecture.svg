@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="780" viewBox="0 0 1100 780" font-family="'Courier New', Courier, monospace">
+
+  <!-- Background -->
+  <rect width="1100" height="780" fill="#f7f8fa" rx="4"/>
+
+  <!-- Title -->
+  <text x="550" y="32" text-anchor="middle" font-size="15" font-weight="bold" fill="#1a2b4a" letter-spacing="1">AI Workflow Orchestrator — System Architecture</text>
+  <line x1="80" y1="42" x2="1020" y2="42" stroke="#c8d0dc" stroke-width="1"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       CLIENT
+  ══════════════════════════════════════════════════════ -->
+  <rect x="440" y="58" width="170" height="44" rx="6" fill="#1a3a5c" stroke="#2e5f8a" stroke-width="1.5"/>
+  <text x="525" y="75" text-anchor="middle" font-size="11" font-weight="bold" fill="#e8f0fa">Client</text>
+  <text x="525" y="91" text-anchor="middle" font-size="9" fill="#90b8d8">HTTP / SSE consumer</text>
+
+  <!-- Arrow: Client → FastAPI -->
+  <line x1="525" y1="102" x2="525" y2="126" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="535" y="118" font-size="8" fill="#5a7a96">HTTP</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       FASTAPI
+  ══════════════════════════════════════════════════════ -->
+  <rect x="340" y="126" width="370" height="72" rx="6" fill="#1a3a5c" stroke="#2e5f8a" stroke-width="1.5"/>
+  <text x="525" y="147" text-anchor="middle" font-size="11" font-weight="bold" fill="#e8f0fa">FastAPI</text>
+  <text x="390" y="163" font-size="8.5" fill="#90b8d8">POST /workflows/submit</text>
+  <text x="390" y="177" font-size="8.5" fill="#90b8d8">GET  /runs/{id}/stream  (SSE)</text>
+  <text x="390" y="191" font-size="8.5" fill="#90b8d8">GET  /metrics/prometheus</text>
+
+  <!-- Auth badge -->
+  <rect x="680" y="133" width="108" height="36" rx="4" fill="#0d2235" stroke="#2e5f8a" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="734" y="148" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#60a8d8">Auth Layer</text>
+  <text x="734" y="162" text-anchor="middle" font-size="8" fill="#5a7a96">JWT / API Key</text>
+  <line x1="680" y1="151" x2="710" y2="151" stroke="#2e5f8a" stroke-width="1" marker-end="url(#arrow-blue-sm)"/>
+
+  <!-- ══════════════════════════════════════════════════════
+       ARROW: FastAPI → Redis
+  ══════════════════════════════════════════════════════ -->
+  <!-- FastAPI down to Redis (left branch) -->
+  <line x1="440" y1="198" x2="290" y2="198" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="350" y="193" font-size="8" fill="#5a7a96">enqueue task</text>
+
+  <!-- FastAPI down to Redis (right branch, SSE state) -->
+  <line x1="610" y1="198" x2="750" y2="198" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="618" y="193" font-size="8" fill="#5a7a96">SSE state</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       REDIS (center-left)
+  ══════════════════════════════════════════════════════ -->
+  <rect x="160" y="178" width="130" height="52" rx="6" fill="#8b1a1a" stroke="#c23a3a" stroke-width="1.5"/>
+  <text x="225" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#fde8e8">Redis</text>
+  <text x="225" y="215" text-anchor="middle" font-size="8.5" fill="#e89090">broker + state store</text>
+  <text x="225" y="227" text-anchor="middle" font-size="8" fill="#c07070">run status · SSE ctx</text>
+
+  <!-- REDIS (SSE state) duplicate label on right -->
+  <rect x="750" y="178" width="130" height="52" rx="6" fill="#8b1a1a" stroke="#c23a3a" stroke-width="1.5"/>
+  <text x="815" y="200" text-anchor="middle" font-size="11" font-weight="bold" fill="#fde8e8">Redis</text>
+  <text x="815" y="215" text-anchor="middle" font-size="8.5" fill="#e89090">broker + state store</text>
+  <text x="815" y="227" text-anchor="middle" font-size="8" fill="#c07070">run status · SSE ctx</text>
+
+  <!-- Note: both boxes are same Redis, show with dashed connector -->
+  <line x1="290" y1="204" x2="750" y2="204" stroke="#c23a3a" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="520" y="200" text-anchor="middle" font-size="7.5" fill="#c23a3a">same Redis instance</text>
+
+  <!-- Arrow: Redis → Celery Workers -->
+  <line x1="225" y1="230" x2="225" y2="268" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="235" y="256" font-size="8" fill="#5a7a96">consume</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       WORKER INTERNALS GROUP (dashed border)
+  ══════════════════════════════════════════════════════ -->
+  <rect x="68" y="260" width="764" height="320" rx="8" fill="#eef3f8" stroke="#6a9bc8" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="88" y="280" font-size="9" fill="#3a6a96" font-weight="bold" letter-spacing="0.5">Worker Internals</text>
+
+  <!-- Celery Workers bar -->
+  <rect x="84" y="286" width="736" height="44" rx="5" fill="#1a3a5c" stroke="#2e5f8a" stroke-width="1.5"/>
+  <text x="452" y="304" text-anchor="middle" font-size="10" font-weight="bold" fill="#e8f0fa">Celery Workers  ×4</text>
+  <text x="452" y="320" text-anchor="middle" font-size="8.5" fill="#90b8d8">execute_workflow_task(workflow_id, run_id, payload)</text>
+
+  <!-- Arrow: Workers → Orchestrator -->
+  <line x1="452" y1="330" x2="452" y2="354" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- ── Orchestrator box ── -->
+  <rect x="196" y="354" width="512" height="48" rx="5" fill="#0d3050" stroke="#4080b0" stroke-width="1.5"/>
+  <text x="452" y="373" text-anchor="middle" font-size="10" font-weight="bold" fill="#e8f0fa">Orchestrator</text>
+  <text x="452" y="389" text-anchor="middle" font-size="8.5" fill="#70a8d0">coordinates agent pipeline · manages state · streams events</text>
+
+  <!-- Arrow: Orchestrator → Agent pipeline -->
+  <line x1="452" y1="402" x2="452" y2="424" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- ── Agent pipeline row ── -->
+  <!-- ClassifierAgent -->
+  <rect x="84" y="424" width="168" height="52" rx="5" fill="#173d60" stroke="#4080b0" stroke-width="1.5"/>
+  <text x="168" y="444" text-anchor="middle" font-size="10" font-weight="bold" fill="#e8f0fa">ClassifierAgent</text>
+  <text x="168" y="458" text-anchor="middle" font-size="8.5" fill="#70a8d0">[gpt-4o-mini]</text>
+  <text x="168" y="470" text-anchor="middle" font-size="8" fill="#5a8ab0">intent · confidence</text>
+
+  <!-- Confidence Gate -->
+  <rect x="270" y="432" width="96" height="36" rx="4" fill="#1a2a3a" stroke="#5090c0" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="318" y="448" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#80c0f0">Confidence</text>
+  <text x="318" y="461" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#80c0f0">Gate</text>
+
+  <!-- Arrow: Classifier → Gate -->
+  <line x1="252" y1="450" x2="270" y2="450" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- Branch: Gate → NEEDS_REVIEW -->
+  <line x1="318" y1="432" x2="318" y2="416" stroke="#e09030" stroke-width="1.2" marker-end="url(#arrow-orange)"/>
+  <rect x="262" y="396" width="112" height="20" rx="3" fill="#3a2000" stroke="#e09030" stroke-width="1"/>
+  <text x="318" y="410" text-anchor="middle" font-size="8" fill="#e09030">→ NEEDS_REVIEW</text>
+
+  <!-- Arrow: Gate → Planner -->
+  <line x1="366" y1="450" x2="386" y2="450" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="374" y="445" font-size="7.5" fill="#5a8ab0">pass</text>
+
+  <!-- PlannerAgent -->
+  <rect x="386" y="424" width="168" height="52" rx="5" fill="#173d60" stroke="#4080b0" stroke-width="1.5"/>
+  <text x="470" y="444" text-anchor="middle" font-size="10" font-weight="bold" fill="#e8f0fa">PlannerAgent</text>
+  <text x="470" y="458" text-anchor="middle" font-size="8.5" fill="#70a8d0">[gpt-4o-mini]</text>
+  <text x="470" y="470" text-anchor="middle" font-size="8" fill="#5a8ab0">step plan · DAG</text>
+
+  <!-- Arrow: Planner → Executor -->
+  <line x1="554" y1="450" x2="574" y2="450" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- ExecutorAgent -->
+  <rect x="574" y="424" width="178" height="52" rx="5" fill="#173d60" stroke="#4080b0" stroke-width="1.5"/>
+  <text x="663" y="444" text-anchor="middle" font-size="10" font-weight="bold" fill="#e8f0fa">ExecutorAgent</text>
+  <text x="663" y="458" text-anchor="middle" font-size="8.5" fill="#70a8d0">[gpt-4o]</text>
+  <text x="663" y="470" text-anchor="middle" font-size="8" fill="#5a8ab0">tool dispatch · retry</text>
+
+  <!-- Arrow: ExecutorAgent → Tools -->
+  <line x1="663" y1="476" x2="663" y2="502" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <!-- ── Tools layer ── -->
+  <rect x="84" y="502" width="736" height="64" rx="5" fill="#0d2235" stroke="#3a6a96" stroke-width="1.5"/>
+  <text x="452" y="520" text-anchor="middle" font-size="9" font-weight="bold" fill="#80b8e0" letter-spacing="0.5">Tools</text>
+
+  <!-- Tool pills -->
+  <rect x="100" y="526" width="96" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1"/>
+  <text x="148" y="541" text-anchor="middle" font-size="8" fill="#80c0f0">LogAnalysis</text>
+
+  <rect x="204" y="526" width="96" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1"/>
+  <text x="252" y="541" text-anchor="middle" font-size="8" fill="#80c0f0">EmailDraft</text>
+
+  <rect x="308" y="526" width="96" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1"/>
+  <text x="356" y="541" text-anchor="middle" font-size="8" fill="#80c0f0">Webhook</text>
+
+  <rect x="412" y="526" width="96" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1"/>
+  <text x="460" y="541" text-anchor="middle" font-size="8" fill="#80c0f0">DatabaseQuery</text>
+
+  <rect x="516" y="526" width="96" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1"/>
+  <text x="564" y="541" text-anchor="middle" font-size="8" fill="#80c0f0">Slack</text>
+
+  <rect x="620" y="526" width="96" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1"/>
+  <text x="668" y="541" text-anchor="middle" font-size="8" fill="#80c0f0">PagerDuty</text>
+
+  <rect x="724" y="526" width="80" height="22" rx="10" fill="#143050" stroke="#3a7ab0" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="764" y="541" text-anchor="middle" font-size="8" fill="#5a8ab0">+ custom</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       POSTGRESQL
+  ══════════════════════════════════════════════════════ -->
+  <rect x="390" y="614" width="270" height="54" rx="6" fill="#143020" stroke="#3a7040" stroke-width="1.5"/>
+  <text x="525" y="635" text-anchor="middle" font-size="11" font-weight="bold" fill="#80d890">PostgreSQL</text>
+  <text x="525" y="651" text-anchor="middle" font-size="8.5" fill="#60a870">runs · steps · traces · cost · audit</text>
+  <text x="525" y="663" text-anchor="middle" font-size="8" fill="#4a8060">persistent store (SQLAlchemy + Alembic)</text>
+
+  <!-- Arrow: Worker internals → PostgreSQL -->
+  <line x1="452" y1="580" x2="452" y2="614" stroke="#4a7a50" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
+  <text x="458" y="600" font-size="7.5" fill="#4a8060">write runs/steps</text>
+
+  <!-- Arrow: FastAPI → PostgreSQL (reads) -->
+  <line x1="525" y1="198" x2="660" y2="198" stroke="#4a7a50" stroke-width="0" stroke-dasharray="0"/>
+  <!-- invisible placeholder removed; FastAPI reads via API path shown by worker writes -->
+
+  <!-- ══════════════════════════════════════════════════════
+       OBSERVABILITY GROUP
+  ══════════════════════════════════════════════════════ -->
+  <rect x="840" y="260" width="242" height="320" rx="8" fill="#f0f0f8" stroke="#9090c8" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="858" y="280" font-size="9" fill="#4a4a96" font-weight="bold" letter-spacing="0.5">Observability</text>
+
+  <!-- Prometheus -->
+  <rect x="858" y="292" width="204" height="52" rx="5" fill="#3a1a00" stroke="#c05810" stroke-width="1.5"/>
+  <text x="960" y="313" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffc080">Prometheus</text>
+  <text x="960" y="329" text-anchor="middle" font-size="8.5" fill="#c08040">scrapes /metrics/prometheus</text>
+  <text x="960" y="341" text-anchor="middle" font-size="8" fill="#906030">15s interval</text>
+
+  <!-- Arrow: Prometheus → FastAPI (scrape) -->
+  <line x1="858" y1="318" x2="710" y2="180" stroke="#c05810" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-orange2)"/>
+  <text x="790" y="268" font-size="7.5" fill="#c05810" transform="rotate(-38,790,268)">scrape</text>
+
+  <!-- Grafana -->
+  <rect x="858" y="362" width="204" height="52" rx="5" fill="#200030" stroke="#9030c0" stroke-width="1.5"/>
+  <text x="960" y="383" text-anchor="middle" font-size="10" font-weight="bold" fill="#d080f0">Grafana</text>
+  <text x="960" y="399" text-anchor="middle" font-size="8.5" fill="#a060c0">dashboards · alerting</text>
+  <text x="960" y="411" text-anchor="middle" font-size="8" fill="#804090">reads Prometheus datasource</text>
+
+  <!-- Arrow: Grafana reads Prometheus -->
+  <line x1="960" y1="362" x2="960" y2="344" stroke="#9030c0" stroke-width="1.2" marker-end="url(#arrow-purple)"/>
+  <text x="966" y="356" font-size="7.5" fill="#9030c0">query</text>
+
+  <!-- Jaeger -->
+  <rect x="858" y="432" width="204" height="52" rx="5" fill="#001f30" stroke="#2080b0" stroke-width="1.5"/>
+  <text x="960" y="453" text-anchor="middle" font-size="10" font-weight="bold" fill="#60c0f0">Jaeger</text>
+  <text x="960" y="469" text-anchor="middle" font-size="8.5" fill="#4090c0">distributed tracing</text>
+  <text x="960" y="481" text-anchor="middle" font-size="8" fill="#306080">receives OTel OTLP traces</text>
+
+  <!-- Arrow: Workers → Jaeger (OTel) -->
+  <line x1="832" y1="380" x2="858" y2="460" stroke="#2080b0" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-blue2)"/>
+  <text x="835" y="424" font-size="7.5" fill="#2080b0">OTel</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       LEGEND
+  ══════════════════════════════════════════════════════ -->
+  <rect x="68" y="696" width="540" height="70" rx="5" fill="#eef3f8" stroke="#c8d0dc" stroke-width="1"/>
+  <text x="84" y="714" font-size="8.5" font-weight="bold" fill="#1a2b4a">Legend</text>
+
+  <!-- solid blue -->
+  <line x1="84" y1="728" x2="118" y2="728" stroke="#5a8ab0" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <text x="124" y="732" font-size="8" fill="#3a5a7a">primary data flow</text>
+
+  <!-- dashed green -->
+  <line x1="84" y1="746" x2="118" y2="746" stroke="#4a7a50" stroke-width="1.2" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
+  <text x="124" y="750" font-size="8" fill="#3a5a7a">DB write / read</text>
+
+  <!-- dashed orange -->
+  <line x1="220" y1="728" x2="254" y2="728" stroke="#c05810" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-orange2)"/>
+  <text x="260" y="732" font-size="8" fill="#3a5a7a">metrics scrape</text>
+
+  <!-- dashed blue -->
+  <line x1="220" y1="746" x2="254" y2="746" stroke="#2080b0" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arrow-blue2)"/>
+  <text x="260" y="750" font-size="8" fill="#3a5a7a">OTel traces</text>
+
+  <!-- confidence gate branch -->
+  <line x1="356" y1="728" x2="390" y2="728" stroke="#e09030" stroke-width="1.2" marker-end="url(#arrow-orange)"/>
+  <text x="396" y="732" font-size="8" fill="#3a5a7a">confidence branch</text>
+
+  <text x="356" y="750" font-size="8" fill="#3a5a7a">dashed box = logical grouping / same instance</text>
+
+  <!-- Version / author note -->
+  <text x="1080" y="770" text-anchor="end" font-size="7.5" fill="#9090a0">AI Workflow Orchestrator · arch v1.0</text>
+
+  <!-- ══════════════════════════════════════════════════════
+       ARROW MARKER DEFS
+  ══════════════════════════════════════════════════════ -->
+  <defs>
+    <marker id="arrow-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#5a8ab0"/>
+    </marker>
+    <marker id="arrow-blue-sm" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
+      <polygon points="0 0, 6 2.5, 0 5" fill="#5a8ab0"/>
+    </marker>
+    <marker id="arrow-blue2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#2080b0"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#4a7a50"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#e09030"/>
+    </marker>
+    <marker id="arrow-orange2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#c05810"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#9030c0"/>
+    </marker>
+  </defs>
+
+</svg>
