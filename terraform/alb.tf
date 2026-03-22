@@ -1,5 +1,12 @@
+# AWS ALB and target-group names are capped at 32 characters.
+# Abbreviate: first 16 chars of project_name + first 4 chars of environment.
+# e.g. "ai-workflow-orch-prod-alb" (25 chars), "ai-workflow-orch-prod-api-tg" (28 chars).
+locals {
+  alb_name_prefix = "${substr(var.project_name, 0, 16)}-${substr(var.environment, 0, 4)}"
+}
+
 resource "aws_lb" "main" {
-  name               = "${var.project_name}-${var.environment}-alb"
+  name               = "${local.alb_name_prefix}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
@@ -13,7 +20,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "api" {
-  name        = "${var.project_name}-${var.environment}-api-tg"
+  name        = "${local.alb_name_prefix}-api-tg"
   port        = 8000
   protocol    = "HTTP"
   target_type = "ip"
