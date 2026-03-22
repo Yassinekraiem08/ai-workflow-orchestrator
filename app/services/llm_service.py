@@ -52,6 +52,22 @@ def get_client() -> AsyncOpenAI:
     return _client
 
 
+def reset_llm_client() -> None:
+    """
+    Clears the cached AsyncOpenAI singleton.
+
+    The openai SDK wraps httpx.AsyncClient, which binds its connection pool to
+    the event loop that created it. Celery Prefork workers call asyncio.run()
+    once per task, creating a fresh loop each time. Without this reset, the
+    second task per worker reuses a client whose httpx pool references the old
+    loop and raises "Future attached to a different loop".
+
+    Call this immediately before every asyncio.run() in a Celery task.
+    """
+    global _client
+    _client = None
+
+
 def _build_messages(request: LLMRequest) -> list[dict[str, Any]]:
     """Prepend system message into the messages list (OpenAI style)."""
     messages = []

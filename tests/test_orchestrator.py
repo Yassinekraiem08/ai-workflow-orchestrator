@@ -147,7 +147,7 @@ async def test_full_workflow_run():
     }
 
     with (
-        patch("app.core.orchestrator.AsyncSessionFactory") as mock_session_factory,
+        patch("app.core.orchestrator._db_session.AsyncSessionFactory") as mock_session_factory,
         patch("app.agents.base_agent.llm_service.complete_with_tools", new_callable=AsyncMock,
               side_effect=mock_llm_side_effect),
         patch("app.core.orchestrator.workflow_service.update_run_status", new_callable=AsyncMock),
@@ -194,7 +194,7 @@ async def test_workflow_fails_on_classification_error():
     mock_run.id = "run_chaos1"
 
     with (
-        patch("app.core.orchestrator.AsyncSessionFactory") as mock_sf,
+        patch("app.core.orchestrator._db_session.AsyncSessionFactory") as mock_sf,
         patch("app.core.orchestrator._classifier.run",
               new_callable=AsyncMock,
               side_effect=ClassificationError("LLM returned invalid task_type")),
@@ -232,7 +232,7 @@ async def test_workflow_fails_on_planning_error():
     mock_run.id = "run_chaos2"
 
     with (
-        patch("app.core.orchestrator.AsyncSessionFactory") as mock_sf,
+        patch("app.core.orchestrator._db_session.AsyncSessionFactory") as mock_sf,
         patch("app.core.orchestrator._classifier.run",
               new_callable=AsyncMock,
               return_value=MagicMock(

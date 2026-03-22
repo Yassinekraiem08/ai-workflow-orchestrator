@@ -193,7 +193,7 @@ async def test_orchestrator_triggers_replan_on_needs_replan():
             return make_executor_response(step_name)
 
     with (
-        patch("app.core.orchestrator.AsyncSessionFactory") as mock_sf,
+        patch("app.core.orchestrator._db_session.AsyncSessionFactory") as mock_sf,
         patch("app.agents.base_agent.llm_service.complete_with_tools",
               new_callable=AsyncMock, side_effect=mock_llm),
         patch("app.core.orchestrator.workflow_service.update_run_status", new_callable=AsyncMock),
@@ -275,7 +275,7 @@ async def test_orchestrator_no_replan_when_needs_replan_false():
     replanner_mock = AsyncMock()
 
     with (
-        patch("app.core.orchestrator.AsyncSessionFactory") as mock_sf,
+        patch("app.core.orchestrator._db_session.AsyncSessionFactory") as mock_sf,
         patch("app.agents.base_agent.llm_service.complete_with_tools",
               new_callable=AsyncMock, side_effect=mock_llm),
         patch("app.core.orchestrator._replanner.run", replanner_mock),

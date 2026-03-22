@@ -12,7 +12,7 @@ from app.services.llm_service import estimate_cost
 from app.services.prometheus_service import WORKFLOW_COMPLETIONS, WORKFLOW_DURATION
 from app.utils.helpers import ms_since, utcnow as _utcnow
 from app.db.models import WorkflowStep
-from app.db.session import AsyncSessionFactory
+import app.db.session as _db_session
 from app.services import workflow_service
 from app.services.logging_service import get_logger
 from app.services.telemetry_service import get_tracer
@@ -55,7 +55,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
     log.info("workflow_started")
     _start_time = _utcnow()
 
-    async with AsyncSessionFactory() as db:
+    async with _db_session.AsyncSessionFactory() as db:
         try:
             await state_manager.set_status(run_id, RunStatus.RUNNING)
             await workflow_service.update_run_status(db, run_id, RunStatus.RUNNING)

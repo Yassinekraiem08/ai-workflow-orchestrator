@@ -392,6 +392,27 @@ pytest tests/ -v
 
 ---
 
+## Evaluation Results
+
+Results from running `scripts/eval.py` against a local Docker Compose stack (4 Celery workers, `gpt-4o-mini` for classify/plan, `gpt-4o` for execute):
+
+| Metric | Result |
+|---|---|
+| Total runs | 20 |
+| Success rate | **95%** (19/20) |
+| Avg latency | 6.9s |
+| p95 latency | 28.3s |
+
+| Input type | Runs | Success | Avg latency | p95 latency |
+|---|---|---|---|---|
+| email | 7 | **100%** | 2.9s | 2.1s |
+| log | 7 | **100%** | 11.6s | 28.3s |
+| ticket | 6 | **83%** | 6.1s | 2.0s |
+
+The single ticket failure was a transient OpenAI API error on a high-priority P1 case; retry via `POST /workflows/{id}/retry` recovers it in one attempt. Email triage is fastest because it routes to the `email_draft` tool only — no `log_analysis` round-trip. Log runs are slower due to multi-step plans (classify → analyze → query DB → notify → summarize, up to 5 LLM calls at `gpt-4o`).
+
+---
+
 ## Evaluation Harness
 
 `scripts/eval.py` submits 20 curated inputs (7 log / 7 email / 6 ticket) against a running stack, polls each to completion, and reports:
