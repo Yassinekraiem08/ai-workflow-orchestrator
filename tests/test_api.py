@@ -19,6 +19,10 @@ def _make_mock_run(run_id: str = "run_abc123", status: str = "queued"):
     mock_run.created_at = datetime.now(UTC)
     mock_run.updated_at = datetime.now(UTC)
     mock_run.final_output = None
+    mock_run.quality_score = None
+    mock_run.quality_breakdown = None
+    mock_run.cache_hit = False
+    mock_run.safety_flagged = False
     return mock_run
 
 
