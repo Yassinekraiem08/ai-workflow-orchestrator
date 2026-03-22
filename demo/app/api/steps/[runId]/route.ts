@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+
 const BACKEND_URL = process.env.BACKEND_URL!;
 const API_KEY = process.env.API_KEY!;
 
@@ -11,6 +13,7 @@ export async function GET(
     const tokenRes = await fetch(`${BACKEND_URL}/auth/token`, {
       method: "POST",
       headers: { "X-API-Key": API_KEY },
+      cache: "no-store",
     });
 
     if (!tokenRes.ok) {
