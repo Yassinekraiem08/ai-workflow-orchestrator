@@ -1,0 +1,5 @@
+{
+  "input_type": "ticket",
+  "raw_input": "P1 — Production checkout service down. All payment transactions failing with HTTP 503. Started 03:47 UTC. ~$12,000/min revenue impact. SLA breach in 8 minutes. Previous incident INC-9103 had same symptoms last Tuesday — was a Redis failover.",
+  "priority": 1
+}

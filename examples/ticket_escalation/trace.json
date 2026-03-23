@@ -1,0 +1,75 @@
+{
+  "run_id": "run_b7e2d90f1c44",
+  "status": "completed",
+  "input_type": "ticket",
+  "priority": 1,
+  "created_at": "2026-03-22T03:47:12Z",
+  "updated_at": "2026-03-22T03:47:41Z",
+  "final_output": "[query_incident_db] Found previous incident INC-9103 (2026-03-15): same symptoms, root cause was Redis primary failover. Resolution: manual failover to replica, TTL 22 minutes.\n\n[create_pagerduty_incident] PagerDuty P1 incident INC-9158 created. On-call SRE and engineering lead paged.\n\n[notify_channel] Slack #incidents-p1 notified. War room link attached.\n\n[summarize] P1 checkout outage. Historical match to INC-9103 strongly suggests Redis failover. Recommended immediate action: check Redis replication status, trigger manual failover if primary is unhealthy. PagerDuty INC-9158 active, SRE paged.",
+  "quality_score": 0.94,
+  "cache_hit": false,
+  "safety_flagged": false,
+  "steps": [
+    {
+      "step_order": 1,
+      "step_name": "query_incident_db",
+      "status": "completed",
+      "tool_name": "database_query",
+      "latency_ms": 980,
+      "output": {
+        "matching_incidents": 1,
+        "incident_id": "INC-9103",
+        "date": "2026-03-15",
+        "root_cause": "Redis primary failover",
+        "resolution": "Manual failover to replica",
+        "resolution_time_minutes": 22
+      }
+    },
+    {
+      "step_order": 2,
+      "step_name": "create_pagerduty_incident",
+      "status": "completed",
+      "tool_name": "pagerduty_incident",
+      "latency_ms": 760,
+      "output": {
+        "incident_id": "INC-9158",
+        "severity": "critical",
+        "action": "trigger",
+        "dedup_key": "checkout-503-2026-03-22"
+      }
+    },
+    {
+      "step_order": 3,
+      "step_name": "notify_channel",
+      "status": "completed",
+      "tool_name": "slack_notification",
+      "latency_ms": 280,
+      "output": {
+        "ok": true,
+        "channel": "#incidents-p1",
+        "message": "P1 INC-9158: Checkout 503 — suspected Redis failover (matches INC-9103). SRE paged."
+      }
+    },
+    {
+      "step_order": 4,
+      "step_name": "summarize",
+      "status": "completed",
+      "tool_name": null,
+      "latency_ms": 1740,
+      "output": {
+        "summary": "P1 checkout outage with historical match to Redis failover incident. Immediate actions taken. SRE paged.",
+        "severity": "critical",
+        "needs_replan": false
+      }
+    }
+  ],
+  "llm_traces": [
+    {"agent": "classifier_agent", "model": "gpt-4o-mini", "tokens_in": 289, "tokens_out": 94, "latency_ms": 590, "cost_usd": 0.000057},
+    {"agent": "planner_agent",    "model": "gpt-4o-mini", "tokens_in": 412, "tokens_out": 198, "latency_ms": 810, "cost_usd": 0.000093},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 1580, "tokens_out": 412, "latency_ms": 3240, "cost_usd": 0.008020},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 1102, "tokens_out": 298, "latency_ms": 1740, "cost_usd": 0.005735}
+  ],
+  "total_cost_usd": 0.013905,
+  "total_latency_ms": 29400,
+  "replan_count": 0
+}

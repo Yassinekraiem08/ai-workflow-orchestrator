@@ -1,0 +1,5 @@
+{
+  "input_type": "log",
+  "raw_input": "2026-03-21 03:14:00 ERROR asyncpg.exceptions.TooManyConnectionsError: connection pool exhausted (pool_size=20, checked_out=20)\n2026-03-21 03:14:01 ERROR [worker-1] Failed to acquire DB connection after 30s timeout\n2026-03-21 03:14:02 ERROR [worker-2] Failed to acquire DB connection after 30s timeout\n2026-03-21 03:14:03 CRITICAL [orchestrator] All workers stalled — queue depth 847 tasks\n2026-03-21 03:14:04 ERROR [api] HTTP 500 on POST /workflows/submit — DB unavailable",
+  "priority": 1
+}

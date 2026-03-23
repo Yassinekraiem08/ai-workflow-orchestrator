@@ -1,0 +1,49 @@
+{
+  "run_id": "run_c9d4e81a2f77",
+  "status": "completed",
+  "input_type": "email",
+  "priority": 3,
+  "created_at": "2026-03-20T14:22:01Z",
+  "updated_at": "2026-03-20T14:22:08Z",
+  "final_output": "[draft_email_response] Subject: Re: Duplicate charge — order #77421\n\nDear Sarah,\n\nThank you for reaching out. I'm sorry to hear about the duplicate charge on order #77421.\n\nI've flagged this for our billing team and initiated a refund of $89.99 to your original payment method. You should see the refund within 3–5 business days depending on your bank.\n\nFor reference:\n- Order: #77421\n- Duplicate charge amount: $89.99\n- Refund ETA: 3–5 business days\n\nIf you don't see the refund after 5 business days, please reply to this email and we'll escalate immediately.\n\nApologies again for the inconvenience.\n\nBest regards,\nSupport Team",
+  "quality_score": 0.88,
+  "cache_hit": false,
+  "safety_flagged": false,
+  "steps": [
+    {
+      "step_order": 1,
+      "step_name": "draft_email_response",
+      "status": "completed",
+      "tool_name": "email_draft",
+      "latency_ms": 2140,
+      "output": {
+        "subject": "Re: Duplicate charge — order #77421",
+        "body": "Dear Sarah,\n\nThank you for reaching out...",
+        "tone": "empathetic",
+        "action_taken": "refund_initiated",
+        "escalate": false
+      }
+    },
+    {
+      "step_order": 2,
+      "step_name": "summarize",
+      "status": "completed",
+      "tool_name": null,
+      "latency_ms": 980,
+      "output": {
+        "summary": "Duplicate charge confirmed. Draft response generated with refund confirmation and 3-5 day timeline.",
+        "severity": "low",
+        "needs_replan": false
+      }
+    }
+  ],
+  "llm_traces": [
+    {"agent": "classifier_agent", "model": "gpt-4o-mini", "tokens_in": 248, "tokens_out": 78, "latency_ms": 510, "cost_usd": 0.000049},
+    {"agent": "planner_agent",    "model": "gpt-4o-mini", "tokens_in": 368, "tokens_out": 142, "latency_ms": 680, "cost_usd": 0.000079},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 890, "tokens_out": 312, "latency_ms": 2140, "cost_usd": 0.003345},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 540, "tokens_out": 148, "latency_ms": 980, "cost_usd": 0.001830}
+  ],
+  "total_cost_usd": 0.005303,
+  "total_latency_ms": 7200,
+  "replan_count": 0
+}

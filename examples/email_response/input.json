@@ -1,0 +1,5 @@
+{
+  "input_type": "email",
+  "raw_input": "Subject: Duplicate charge — order #77421\n\nHi Support,\n\nI was charged twice for order #77421 on March 20th. My bank shows two charges of $89.99 each. I only placed one order. Please refund the duplicate charge as soon as possible.\n\nMy account email is sarah.chen@example.com.\n\nThank you,\nSarah",
+  "priority": 3
+}

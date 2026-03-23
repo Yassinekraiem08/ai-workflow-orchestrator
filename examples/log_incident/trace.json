@@ -1,0 +1,90 @@
+{
+  "run_id": "run_a3f9c12b8e01",
+  "status": "completed",
+  "input_type": "log",
+  "priority": 1,
+  "created_at": "2026-03-21T03:14:05Z",
+  "updated_at": "2026-03-21T03:14:34Z",
+  "final_output": "[analyze_logs] Critical: DB connection pool exhausted across 2 workers. Queue depth 847 tasks. All API writes failing.\n\n[query_db_health] Found 23 long-running transactions holding connections. Oldest: 47 minutes.\n\n[create_pagerduty_incident] PagerDuty incident INC-9142 created (severity: critical). On-call engineer notified.\n\n[replan: injected step] Replanner detected live transactions blocking pool — injected 'force_disconnect_idle' step.\n\n[force_db_connections] Webhook sent to db-ops endpoint. Idle connections terminated (18 freed).\n\n[summarize] DB connection pool crisis resolved. Root cause: 23 long-running transactions accumulating over 47 minutes. Immediate actions: PagerDuty incident raised, idle connections terminated (queue draining). Recommended: add connection timeout enforcement and transaction duration alerting.",
+  "quality_score": 0.91,
+  "cache_hit": false,
+  "safety_flagged": false,
+  "steps": [
+    {
+      "step_order": 1,
+      "step_name": "analyze_logs",
+      "status": "completed",
+      "tool_name": "log_analysis",
+      "latency_ms": 2840,
+      "output": {
+        "error_count": 5,
+        "severity": "critical",
+        "root_cause": "DB connection pool exhausted",
+        "affected_components": ["worker-1", "worker-2", "orchestrator", "api"],
+        "needs_replan": true,
+        "next_action": "Query DB for active connections holding the pool"
+      }
+    },
+    {
+      "step_order": 2,
+      "step_name": "query_db_health",
+      "status": "completed",
+      "tool_name": "database_query",
+      "latency_ms": 1120,
+      "output": {
+        "active_connections": 20,
+        "long_running_transactions": 23,
+        "oldest_transaction_minutes": 47,
+        "idle_connections": 18
+      }
+    },
+    {
+      "step_order": 3,
+      "step_name": "create_pagerduty_incident",
+      "status": "completed",
+      "tool_name": "pagerduty_incident",
+      "latency_ms": 890,
+      "output": {
+        "incident_id": "INC-9142",
+        "severity": "critical",
+        "action": "trigger",
+        "dedup_key": "db-pool-exhausted-2026-03-21"
+      }
+    },
+    {
+      "step_order": 4,
+      "step_name": "force_db_connections",
+      "status": "completed",
+      "tool_name": "webhook",
+      "note": "Dynamically injected by RePlannerAgent after step 1 detected idle connection accumulation",
+      "latency_ms": 340,
+      "output": {
+        "status_code": 200,
+        "response": "18 idle connections terminated"
+      }
+    },
+    {
+      "step_order": 5,
+      "step_name": "summarize",
+      "status": "completed",
+      "tool_name": null,
+      "latency_ms": 1890,
+      "output": {
+        "summary": "DB connection pool crisis resolved. Root cause: long-running transactions. Actions taken: PagerDuty incident raised, idle connections terminated.",
+        "severity": "critical",
+        "needs_replan": false
+      }
+    }
+  ],
+  "llm_traces": [
+    {"agent": "classifier_agent", "model": "gpt-4o-mini", "tokens_in": 312, "tokens_out": 89, "latency_ms": 680, "cost_usd": 0.000062},
+    {"agent": "planner_agent",    "model": "gpt-4o-mini", "tokens_in": 498, "tokens_out": 241, "latency_ms": 920, "cost_usd": 0.000108},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 1240, "tokens_out": 318, "latency_ms": 2840, "cost_usd": 0.004370},
+    {"agent": "replanner_agent",  "model": "gpt-4o-mini", "tokens_in": 621, "tokens_out": 178, "latency_ms": 740, "cost_usd": 0.000132},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 892, "tokens_out": 204, "latency_ms": 1890, "cost_usd": 0.002880},
+    {"agent": "executor_agent",   "model": "gpt-4o",      "tokens_in": 1105, "tokens_out": 287, "latency_ms": 1560, "cost_usd": 0.003635}
+  ],
+  "total_cost_usd": 0.011187,
+  "total_latency_ms": 29400,
+  "replan_count": 1
+}
