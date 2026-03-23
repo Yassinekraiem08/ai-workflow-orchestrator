@@ -51,7 +51,7 @@ class BaseAgent(ABC):
         """Validate and return the parsed tool call input."""
         ...
 
-    async def run(self, context: dict[str, Any]) -> AgentResult:
+    async def run(self, context: dict[str, Any], api_key: str | None = None) -> AgentResult:
         last_error: Exception | None = None
 
         for attempt in range(self.max_retries + 1):
@@ -65,7 +65,7 @@ class BaseAgent(ABC):
                     temperature=0.1,
                 )
 
-                response: LLMResponse = await llm_service.complete_with_tools(request)
+                response: LLMResponse = await llm_service.complete_with_tools(request, api_key=api_key)
 
                 if not response.tool_calls:
                     raise LLMResponseError(

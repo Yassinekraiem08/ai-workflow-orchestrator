@@ -26,6 +26,7 @@ async def execute_step(
     step: WorkflowStep,
     run_context: dict[str, Any],
     raw_input: str,
+    api_key: str | None = None,
 ) -> dict[str, Any]:
     """
     Executes a single workflow step with tool call + executor agent synthesis.
@@ -64,7 +65,7 @@ async def execute_step(
             },
             "tool_result": tool_result,
             "run_context": run_context,
-        })
+        }, api_key=api_key)
 
         await workflow_service.record_llm_trace(
             db=db,
@@ -169,7 +170,7 @@ async def _run_fallback(
             "step_name": step.step_name,
             "failure_reason": failure_reason,
             "original_input": raw_input,
-        })
+        }, api_key=api_key)
         output = fallback_result.parsed_output
         output["_fallback_used"] = True
 

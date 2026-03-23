@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_auth
@@ -19,6 +19,7 @@ async def submit_workflow(
     request: WorkflowSubmitRequest,
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(require_auth),
+    x_openai_key: str | None = Header(default=None),
 ) -> WorkflowRunResponse:
     run_id = generate_run_id()
     WORKFLOW_SUBMISSIONS.labels(input_type=request.input_type.value).inc()
@@ -40,6 +41,7 @@ async def submit_workflow(
             "input_type": request.input_type.value,
             "raw_input": request.raw_input,
             "priority": request.priority,
+            "openai_api_key": x_openai_key,
         },
         priority=celery_priority,
     )

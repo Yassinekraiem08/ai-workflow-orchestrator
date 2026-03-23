@@ -18,13 +18,18 @@ export async function POST(req: NextRequest) {
     const { access_token } = await tokenRes.json();
 
     const body = await req.json();
+    const { openai_api_key, ...submitBody } = body;
+
+    const submitHeaders: Record<string, string> = {
+      Authorization: `Bearer ${access_token}`,
+      "Content-Type": "application/json",
+    };
+    if (openai_api_key) submitHeaders["X-OpenAI-Key"] = openai_api_key;
+
     const submitRes = await fetch(`${BACKEND_URL}/workflows/submit`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+      headers: submitHeaders,
+      body: JSON.stringify(submitBody),
     });
 
     const data = await submitRes.json();

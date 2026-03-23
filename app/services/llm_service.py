@@ -77,8 +77,8 @@ def _build_messages(request: LLMRequest) -> list[dict[str, Any]]:
     return messages
 
 
-async def complete(request: LLMRequest) -> LLMResponse:
-    client = get_client()
+async def complete(request: LLMRequest, api_key: str | None = None) -> LLMResponse:
+    client = AsyncOpenAI(api_key=api_key) if api_key else get_client()
     start: datetime = utcnow()
 
     response = await client.chat.completions.create(
@@ -103,12 +103,12 @@ async def complete(request: LLMRequest) -> LLMResponse:
     )
 
 
-async def complete_with_tools(request: LLMRequest) -> LLMResponse:
+async def complete_with_tools(request: LLMRequest, api_key: str | None = None) -> LLMResponse:
     """
     Call the model with function/tool calling.
     Forces the model to call the first tool defined (structured output pattern).
     """
-    client = get_client()
+    client = AsyncOpenAI(api_key=api_key) if api_key else get_client()
     start: datetime = utcnow()
 
     tools = request.tools or []

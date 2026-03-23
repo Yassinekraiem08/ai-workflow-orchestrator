@@ -38,6 +38,7 @@ class OrchestratorInput(BaseModel):
     raw_input: str
     priority: int = 5
     skip_confidence_check: bool = False  # set True when human has approved a needs_review run
+    openai_api_key: str | None = None  # per-request BYOK override
 
 
 class OrchestratorResult(BaseModel):
@@ -114,7 +115,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                     classifier_result = await _classifier.run({
                         "raw_input": input.raw_input,
                         "input_type": input.input_type.value,
-                    })
+                    }, api_key=input.openai_api_key)
                 classification = classifier_result.parsed_output
 
                 await workflow_service.record_llm_trace(
@@ -169,7 +170,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                     planner_result = await _planner.run({
                         "classification": classification,
                         "raw_input": input.raw_input,
-                    })
+                    }, api_key=input.openai_api_key)
                 execution_plan = planner_result.parsed_output
 
                 await workflow_service.record_llm_trace(
@@ -221,6 +222,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                         step=step,
                         run_context=run_context,
                         raw_input=input.raw_input,
+                        api_key=input.openai_api_key,
                     )
                 steps_completed += 1
 
@@ -243,6 +245,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                         input=input,
                         next_order=next_order,
                         log=log,
+                        api_key=input.openai_api_key,
                     )
                     if injected:
                         # Insert new steps before the remaining plan
@@ -310,6 +313,7 @@ async def _maybe_replan(
     input: OrchestratorInput,
     next_order: int,
     log: Any,
+    api_key: str | None = None,
 ) -> list[WorkflowStep]:
     """
     Calls the RePlannerAgent to decide if new steps should be injected.
@@ -334,7 +338,7 @@ async def _maybe_replan(
                 }
                 for s in remaining_steps
             ],
-        })
+        }, api_key=api_key)
 
         await workflow_service.record_llm_trace(
             db=db,

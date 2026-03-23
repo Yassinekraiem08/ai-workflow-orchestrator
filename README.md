@@ -1,6 +1,41 @@
 # AI Workflow Orchestrator
 
-A production-grade LLM orchestration system for multi-step, fault-tolerant workflows with tool execution, state tracking, and full observability. Built for AI Ops use cases: automated triage of tickets, emails, and log-based incidents.
+**Production-grade multi-agent LLM orchestration** — classify → plan → execute → replan, with retries, dead-letter queues, semantic caching, LLM-as-judge evaluation, and full observability. Built for automated triage of tickets, emails, and log-based incidents.
+
+**[▶ Live Demo](https://ai-workflow-orchestrator.vercel.app)** · [API Docs](http://localhost:8000/docs)
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/Yassinekraiem08/ai-workflow-orchestrator.git
+cd ai-workflow-orchestrator
+cp .env.example .env          # add your OPENAI_API_KEY
+docker compose up
+```
+
+The API is now running at `http://localhost:8000`. Submit your first workflow:
+
+```bash
+# Get a token
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/token \
+  -H "X-API-Key: dev-key-changeme" | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# Submit a workflow
+curl -X POST http://localhost:8000/workflows/submit \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"input_type":"log","raw_input":"ERROR: DB connection pool exhausted after 3 retries","priority":1}'
+```
+
+**Observability stack** (included):
+| Service | URL |
+|---------|-----|
+| API + Swagger | http://localhost:8000/docs |
+| Jaeger traces | http://localhost:16686 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 (admin/admin) |
 
 ---
 
