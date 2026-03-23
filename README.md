@@ -1,6 +1,6 @@
 # AI Workflow Orchestrator
 
-**Production-grade multi-agent LLM orchestration** — classify → plan → execute → replan, with retries, dead-letter queues, semantic caching, LLM-as-judge evaluation, and full observability. Built for automated triage of tickets, emails, and log-based incidents.
+A multi-agent LLM orchestration system for operational triage — classify → plan → execute → replan — with retries, dead-letter queues, semantic caching, LLM-as-judge evaluation, and full observability. Built for logs, support tickets, and email workflows.
 
 **[▶ Live Demo](https://ai-workflow-orchestrator.vercel.app)** · [API Docs](http://ai-workflow-orch-prod-alb-851576625.us-east-1.elb.amazonaws.com/docs) · [Examples](examples/) · [Eval Harness](scripts/eval.py)
 
@@ -60,7 +60,7 @@ This project is that system.
 
 ## Benchmark
 
-Results from `scripts/eval.py` (20 curated test cases) vs `scripts/eval_baseline.py` (same inputs, single GPT-4o call, no tooling):
+Results from `scripts/eval.py` (orchestrator) vs `scripts/eval_baseline.py` (baseline). Both scripts are in the repo — run them yourself against a live stack.
 
 | Metric | Single-shot GPT-4o | **Orchestrator** |
 |--------|-------------------|-----------------|
@@ -73,14 +73,20 @@ Results from `scripts/eval.py` (20 curated test cases) vs `scripts/eval_baseline
 | Human escalation | No | **Yes** (confidence gate) |
 | Semantic cache | No | **Yes** |
 
-The orchestrator costs **21% less** per task than calling GPT-4o directly because classification and planning run on GPT-4o-mini — the expensive model is reserved for reasoning-heavy execution steps.
+**Methodology — what these numbers mean and how to reproduce them:**
 
-Latency is higher for complex multi-step runs but comparable for single-tool workflows (email: ~3s).
+- **Test set:** 20 cases (7 log / 7 email / 6 ticket) in `scripts/eval.py`. Cases were chosen to cover the three input types with a range of severities — not cherry-picked to favor the orchestrator. The same 20 cases are used for both baseline and orchestrator runs.
+- **Success definition (orchestrator):** a run reaches `completed` status within the timeout. This is objective — no human judging.
+- **Success definition (baseline):** `scripts/eval_baseline.py` asks GPT-4o to respond in JSON with `input_type`, `severity`, `summary`, `action`, and `confidence`. A response counts as "success" if it returns valid JSON with the correct `input_type` and a non-empty `action`. The bar is intentionally generous to the baseline.
+- **Baseline prompt:** a single system message describing the three task types and asking for structured JSON. No chain-of-thought, no tools, no retries. Full prompt is in `eval_baseline.py`.
+- **Cost calculation:** orchestrator cost comes from `GET /metrics` (sum of `estimated_cost_usd` across all LLM traces for the run). Baseline cost is calculated from OpenAI usage tokens using published gpt-4o pricing ($2.50/M input, $10/M output).
+- **Why the orchestrator costs less:** classification and planning run on `gpt-4o-mini` (~50× cheaper per token than `gpt-4o`). The executor uses `gpt-4o`, but only for reasoning-heavy steps. Single-shot baseline always uses `gpt-4o` for the full context.
+- **Known limitations of this benchmark:** 20 cases is a small sample. The baseline prompt may not represent the best possible single-shot approach. Results may vary with different OpenAI model versions. The orchestrator also has more moving parts that can fail (Redis, Celery, DB connectivity).
 
-Run it yourself:
 ```bash
-python scripts/eval.py                         # orchestrator (requires running stack)
-OPENAI_API_KEY=sk-... python scripts/eval_baseline.py   # baseline comparison
+# Reproduce it yourself
+python scripts/eval.py                                  # orchestrator (requires docker compose up)
+OPENAI_API_KEY=sk-... python scripts/eval_baseline.py  # baseline (OpenAI key only)
 ```
 
 ---
@@ -551,6 +557,37 @@ Celery Prefork workers are synchronous by default. Each task creates a fresh eve
 
 **gpt-4o-mini for cheap agents**
 Classification and planning don't require heavy reasoning — they follow tight schemas with well-constrained outputs. Running those on `gpt-4o-mini` cuts per-run cost by roughly 10× compared to using `gpt-4o` everywhere, without a measurable quality drop on structured tasks.
+
+---
+
+## Limitations
+
+These are real. Know them before you adopt this.
+
+- **Benchmark is 20 cases.** The eval set is small and domain-specific (ops triage). Don't generalize the numbers to arbitrary workflows without running your own eval.
+- **Latency is real.** Multi-step runs take 5–15s. For workflows where <2s response is required, this architecture is the wrong fit — use a single-shot approach.
+- **Cost depends on plan length.** A 5-step plan with `gpt-4o` executor calls is ~10× more expensive than a 1-step email response. Check `GET /metrics` per workflow type before scaling.
+- **Replan loop is bounded, not unlimited.** Max replan depth is 2 by default (`MAX_REPLAN_DEPTH`). Deep chains of uncertainty are not handled — the orchestrator will complete with partial steps rather than loop indefinitely.
+- **Tool implementations are stubs.** The built-in tools (`log_analysis`, `email_draft`, `database_query`, etc.) return realistic LLM-generated outputs but don't integrate with real external systems by default. You wire in your own integrations.
+- **Confidence threshold needs domain tuning.** The default 0.65 threshold for human review is a starting point, not a universal value. Tune it for your classification distribution.
+- **No streaming output.** The SSE endpoint streams status changes and step events, but the final LLM output within a step is not token-streamed.
+- **Single-tenant by default.** `user_id` is tracked per run, but there's no tenant isolation at the queue or data layer. Multi-tenant deployments need additional work.
+
+---
+
+## Why not just use X?
+
+This comes up immediately. The honest answers:
+
+| Alternative | When it's better | When this is better |
+|-------------|-----------------|---------------------|
+| **Single-shot GPT-4o** | Fast, simple, <2s latency, disposable tasks | When you need retries, multi-step execution, tool calls, or audit trails |
+| **LangChain / LangGraph** | Rich ecosystem, many integrations, graph-based flows | When you want async distributed workers, Celery priority queues, and Postgres/Redis persistence without framework lock-in |
+| **AutoGen / CrewAI** | Multi-agent conversation loops, collaborative agents | When you want a deterministic plan-then-execute model with explicit step records, not emergent agent dialogue |
+| **Temporal / Conductor** | Long-running durable workflows, enterprise scale, language-agnostic | When you don't need LLM agents at all, or when your orchestration complexity exceeds what a single-service system can handle |
+| **Plain Celery tasks** | Maximum control, no LLM overhead, known inputs | When you need dynamic classification, LLM-generated plans, or mid-run replanning based on step outputs |
+
+The core reason to use this over the alternatives: you want **async distributed execution** + **LLM-driven planning** + **per-run cost/trace/step auditability** without pulling in a large framework or learning a new workflow DSL.
 
 ---
 

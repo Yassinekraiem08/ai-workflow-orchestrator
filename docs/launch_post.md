@@ -79,15 +79,25 @@ This cuts per-task cost by ~21% vs calling gpt-4o for everything, without qualit
 **New: YAML workflow config**
 You can now add custom input types, routes, and tools by editing `workflows.yml` — no Python changes needed. This is what makes it a general framework rather than a specific triage tool.
 
+**Benchmark methodology (not hiding it):**
+- 20 test cases: 7 log / 7 email / 6 ticket
+- Orchestrator success = run reaches `completed` status (objective, no human judging)
+- Baseline success = GPT-4o returns valid JSON with correct `input_type` + non-empty `action` (generous to baseline)
+- Same 20 cases, same inputs, both scripts in the repo — reproduce it yourself
+
+**Known limitations:**
+- 20 cases is a small sample
+- Tool implementations are LLM-based stubs, not real integrations
+- Latency is 5–15s for multi-step runs (not a real-time system)
+- Replan depth capped at 2
+
+**Why not LangGraph / AutoGen / Temporal?**
+Reasonable alternatives. This is better when you want Celery distributed workers + LLM planning + per-run cost/trace/step records without framework lock-in. Full comparison in the README.
+
 **Live demo:** https://ai-workflow-orchestrator.vercel.app
 **GitHub:** https://github.com/Yassinekraiem08/ai-workflow-orchestrator
 
-I'm looking for:
-1. Feedback on the architecture (especially the replan loop and state management)
-2. Anyone who has a real use case and wants to adapt it
-3. Contributions — especially around tool implementations
-
-What use cases would make you actually use something like this?
+Looking for feedback on the replan loop design, the confidence gate, and anyone with a real ops use case who wants to adapt it.
 
 ---
 
