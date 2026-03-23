@@ -17,8 +17,8 @@ import time
 
 try:
     from openai import OpenAI
-except ImportError:
-    raise SystemExit("pip install openai")
+except ImportError as e:
+    raise SystemExit("pip install openai") from e
 
 from eval import EVAL_CASES  # reuse the same test cases
 
@@ -128,16 +128,16 @@ def run_baseline() -> None:
     print(f"  p95 latency:     {sorted(latencies)[int(len(latencies)*0.95)-1]:.1f}s")
     print(f"  Avg cost/task:   ${avg_cost:.5f}")
     print(f"  Total cost:      ${total_cost:.4f}")
-    print(f"\n  Note: Baseline has no tool execution, retries, replanning,")
-    print(f"  human escalation, or semantic caching.")
+    print("\n  Note: Baseline has no tool execution, retries, replanning,")
+    print("  human escalation, or semantic caching.")
     print(f"{'='*60}\n")
 
     print("\n  ── Side-by-side comparison (run eval.py for orchestrator numbers) ──\n")
     print(f"  {'Metric':<30} {'Baseline':>12} {'Orchestrator':>14}")
     print(f"  {'-'*30} {'-'*12} {'-'*14}")
     print(f"  {'Success rate':<30} {success_rate:.0%}{'':<11} {'94–96%':>14}")
-    print(f"  {'Avg cost/task':<30} {'${:.5f}'.format(avg_cost):<12} {'$0.00191':>14}")
-    print(f"  {'Avg latency':<30} {'{:.1f}s'.format(statistics.mean(latencies)):<12} {'6.9s':>14}")
+    print(f"  {'Avg cost/task':<30} {f'${avg_cost:.5f}':<12} {'$0.00191':>14}")
+    print(f"  {'Avg latency':<30} {f'{statistics.mean(latencies):.1f}s':<12} {'6.9s':>14}")
     print(f"  {'Tool execution':<30} {'None':<12} {'Yes (6 tools)':>14}")
     print(f"  {'Retries on failure':<30} {'None':<12} {'Yes (3×)':>14}")
     print(f"  {'Dynamic replanning':<30} {'No':<12} {'Yes':>14}")

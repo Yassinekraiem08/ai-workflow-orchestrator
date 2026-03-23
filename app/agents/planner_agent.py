@@ -46,10 +46,11 @@ class PlannerAgent(BaseAgent):
             for i, rule in enumerate(config.planner.rules)
         )
 
+        tools_block = "\n".join(tool_lines)
         return (
             "You are a workflow planner for an AI ops triage system. "
             "Given a classified task, generate a step-by-step execution plan.\n\n"
-            f"Available tools:\n" + "\n".join(tool_lines) + "\n\n"
+            f"Available tools:\n{tools_block}\n\n"
             f"Rules:\n{rules_lines}\n\n"
             "You MUST call the 'create_execution_plan' tool with your plan."
         )

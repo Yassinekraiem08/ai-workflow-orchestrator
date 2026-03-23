@@ -163,6 +163,7 @@ async def _run_fallback(
     raw_input: str,
     run_id: str,
     log: Any,
+    api_key: str | None = None,
 ) -> dict[str, Any]:
     log.warning("invoking_fallback_agent", step_name=step.step_name)
     try:
