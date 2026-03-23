@@ -1,0 +1,57 @@
+# AI Workflow Orchestrator — Workflow Configuration
+#
+# Edit this file to add new input types, routes, and tools without modifying any Python code.
+# Changes take effect on the next worker/server restart.
+#
+# Example: add a "github_pr" input type by copying the pattern below.
+
+input_types:
+  ticket:
+    description: "Customer support requests, bug reports, feature requests, service complaints"
+    default_route: ticket_triage
+  email:
+    description: "Email messages requiring a response or action"
+    default_route: email_response
+  log:
+    description: "System logs, error traces, stack traces, monitoring alerts"
+    default_route: log_triage
+
+routes:
+  log_triage:
+    tools: [log_analysis, database_query, webhook]
+  email_response:
+    tools: [email_draft]
+  ticket_triage:
+    tools: [database_query, log_analysis]
+  ticket_escalation:
+    tools: [database_query, webhook, email_draft]
+  incident_response:
+    tools: [log_analysis, database_query, pagerduty_incident, slack_notification]
+  incident_escalation:
+    tools: [log_analysis, database_query, pagerduty_incident, slack_notification]
+  default:
+    tools: [log_analysis, database_query]
+
+tools:
+  log_analysis:
+    description: "Analyze log content for errors, patterns, and recommended actions"
+  email_draft:
+    description: "Generate a draft email response"
+  webhook:
+    description: "Send an HTTP notification to an arbitrary external endpoint"
+  database_query:
+    description: "Query the incident/service database"
+  slack_notification:
+    description: "Send a formatted alert to a Slack channel via webhook URL"
+    args: "webhook_url, message, title (optional), severity (critical/high/medium/low/info), run_id (optional)"
+  pagerduty_incident:
+    description: "Create, acknowledge, or resolve a PagerDuty incident"
+    args: "routing_key, summary, severity (critical/error/warning/info), action (trigger/acknowledge/resolve), dedup_key (optional), details (optional)"
+
+planner:
+  max_steps: 6
+  min_steps: 2
+  rules:
+    - "Keep plans to 3-6 steps"
+    - "The last step must always be a summary/synthesis step with tool_name=null"
+    - "Tool arguments must match the tool's expected inputs exactly"

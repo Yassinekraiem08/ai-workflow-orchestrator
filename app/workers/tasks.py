@@ -8,7 +8,7 @@ from app.core.state_manager import reset_redis_client
 from app.services.llm_service import reset_llm_client
 from app.services.logging_service import get_logger
 from app.services.telemetry_service import get_tracer
-from app.utils.enums import InputType, RunStatus
+from app.utils.enums import RunStatus
 from app.workers.celery_app import celery_app
 
 logger = get_logger(__name__)
@@ -41,7 +41,7 @@ def execute_workflow_task(self: Task, run_id: str, input_type: str, raw_input: s
         ):
             orchestrator_input = OrchestratorInput(
                 run_id=run_id,
-                input_type=InputType(input_type),
+                input_type=input_type,
                 raw_input=raw_input,
                 priority=priority,
                 skip_confidence_check=skip_confidence_check,

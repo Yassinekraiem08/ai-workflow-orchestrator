@@ -1,29 +1,18 @@
-from app.utils.enums import InputType
-
-# Maps input_type + route hints to tool execution order hints
-ROUTE_TOOL_PRIORITIES: dict[str, list[str]] = {
-    "log_triage": ["log_analysis", "database_query", "webhook"],
-    "email_response": ["email_draft"],
-    "ticket_escalation": ["database_query", "webhook", "email_draft"],
-    "ticket_triage": ["database_query", "log_analysis"],
-    "incident_response": ["log_analysis", "database_query", "pagerduty_incident", "slack_notification"],
-    "incident_escalation": ["log_analysis", "database_query", "pagerduty_incident", "slack_notification"],
-    "default": ["log_analysis", "database_query"],
-}
-
-INPUT_TYPE_DEFAULT_ROUTES: dict[InputType, str] = {
-    InputType.LOG: "log_triage",
-    InputType.EMAIL: "email_response",
-    InputType.TICKET: "ticket_triage",
-}
+from app.services.config_loader import get_config
 
 
-def get_route(task_type: InputType, classification_route: str | None = None) -> str:
+def get_route(task_type: str, classification_route: str | None = None) -> str:
     """Returns the canonical route for a classified task."""
-    if classification_route and classification_route in ROUTE_TOOL_PRIORITIES:
+    config = get_config()
+    if classification_route and classification_route in config.routes:
         return classification_route
-    return INPUT_TYPE_DEFAULT_ROUTES.get(task_type, "default")
+    input_cfg = config.input_types.get(task_type)
+    if input_cfg:
+        return input_cfg.default_route
+    return "default"
 
 
 def get_suggested_tools(route: str) -> list[str]:
-    return ROUTE_TOOL_PRIORITIES.get(route, ROUTE_TOOL_PRIORITIES["default"])
+    config = get_config()
+    route_cfg = config.routes.get(route) or config.routes.get("default")
+    return route_cfg.tools if route_cfg else []

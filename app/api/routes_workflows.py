@@ -22,12 +22,12 @@ async def submit_workflow(
     x_openai_key: str | None = Header(default=None),
 ) -> WorkflowRunResponse:
     run_id = generate_run_id()
-    WORKFLOW_SUBMISSIONS.labels(input_type=request.input_type.value).inc()
+    WORKFLOW_SUBMISSIONS.labels(input_type=request.input_type).inc()
 
     run = await workflow_service.create_run(
         db=db,
         run_id=run_id,
-        input_type=request.input_type.value,
+        input_type=request.input_type,
         raw_input=request.raw_input,
         priority=request.priority,
         user_id=user_id,
@@ -38,7 +38,7 @@ async def submit_workflow(
     execute_workflow_task.apply_async(
         kwargs={
             "run_id": run_id,
-            "input_type": request.input_type.value,
+            "input_type": request.input_type,
             "raw_input": request.raw_input,
             "priority": request.priority,
             "openai_api_key": x_openai_key,

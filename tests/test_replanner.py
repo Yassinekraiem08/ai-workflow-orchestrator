@@ -150,7 +150,7 @@ async def test_orchestrator_triggers_replan_on_needs_replan():
 
     llm_call_count = 0
 
-    async def mock_llm(request):
+    async def mock_llm(request, api_key=None):
         nonlocal llm_call_count
         llm_call_count += 1
         if llm_call_count == 1:
@@ -212,6 +212,11 @@ async def test_orchestrator_triggers_replan_on_needs_replan():
         patch("app.core.state_manager.update_context", new_callable=AsyncMock),
         patch("app.core.state_manager.get_context", new_callable=AsyncMock, return_value={}),
         patch("app.core.state_manager.append_completed_step", new_callable=AsyncMock),
+        patch("app.core.orchestrator.check_cache", new_callable=AsyncMock, return_value=None),
+        patch("app.core.orchestrator.cache_store", new_callable=AsyncMock),
+        patch("app.core.orchestrator.check_safety", new_callable=AsyncMock,
+              return_value=MagicMock(safe=True)),
+        patch("app.core.orchestrator.evaluate_output", new_callable=AsyncMock, return_value=None),
     ):
         mock_db_cm = AsyncMock()
         mock_db_cm.__aenter__ = AsyncMock(return_value=mock_db)
@@ -262,7 +267,7 @@ async def test_orchestrator_no_replan_when_needs_replan_false():
 
     llm_call_count = 0
 
-    async def mock_llm(request):
+    async def mock_llm(request, api_key=None):
         nonlocal llm_call_count
         llm_call_count += 1
         if llm_call_count == 1:

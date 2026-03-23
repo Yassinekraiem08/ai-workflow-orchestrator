@@ -1,16 +1,26 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from app.utils.enums import InputType, RunStatus, StepStatus
+from app.utils.enums import RunStatus, StepStatus
 
 # --- Requests ---
 
 class WorkflowSubmitRequest(BaseModel):
-    input_type: InputType
+    input_type: str
     raw_input: str = Field(..., min_length=1, max_length=10_000)
     priority: int = Field(default=5, ge=1, le=10)
+
+    @field_validator("input_type")
+    @classmethod
+    def validate_input_type(cls, v: str) -> str:
+        from app.services.config_loader import get_config
+        config = get_config()
+        if v not in config.input_types:
+            valid = list(config.input_types.keys())
+            raise ValueError(f"input_type '{v}' is not configured. Valid types: {valid}")
+        return v
 
 
 class WorkflowRetryRequest(BaseModel):
@@ -24,7 +34,7 @@ class WorkflowRunResponse(BaseModel):
 
     run_id: str
     status: RunStatus
-    input_type: InputType
+    input_type: str
     priority: int
     user_id: str | None = None
     created_at: datetime

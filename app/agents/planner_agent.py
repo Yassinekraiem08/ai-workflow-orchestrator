@@ -31,27 +31,26 @@ class PlannerAgent(BaseAgent):
         return "planner_agent"
 
     def build_system_prompt(self) -> str:
+        from app.services.config_loader import get_config
+        config = get_config()
+
+        tool_lines = []
+        for name, tool in config.tools.items():
+            line = f"- {name}: {tool.description}"
+            if tool.args:
+                line += f". Args: {tool.args}"
+            tool_lines.append(line)
+
+        rules_lines = "\n".join(
+            f"{i + 1}. {rule}"
+            for i, rule in enumerate(config.planner.rules)
+        )
+
         return (
             "You are a workflow planner for an AI ops triage system. "
             "Given a classified task, generate a step-by-step execution plan.\n\n"
-            "Available tools:\n"
-            "- log_analysis: Analyze log content for errors, patterns, and recommended actions\n"
-            "- email_draft: Generate a draft email response\n"
-            "- webhook: Send an HTTP notification to an arbitrary external endpoint\n"
-            "- database_query: Query the incident/service database\n"
-            "- slack_notification: Send a formatted alert to a Slack channel via webhook URL. "
-            "Args: webhook_url, message, title (optional), severity (critical/high/medium/low/info), "
-            "run_id (optional)\n"
-            "- pagerduty_incident: Create, acknowledge, or resolve a PagerDuty incident. "
-            "Args: routing_key, summary, severity (critical/error/warning/info), "
-            "action (trigger/acknowledge/resolve), dedup_key (optional), details (optional)\n\n"
-            "Rules:\n"
-            "1. Keep plans to 3-6 steps\n"
-            "2. The last step should always be a summary/synthesis step with no tool (tool_name=null)\n"
-            "3. Tool arguments must match the tool's expected inputs exactly\n"
-            "4. For log inputs: always start with log_analysis\n"
-            "5. For ticket inputs: start with database_query to check existing incidents\n"
-            "6. For email inputs: start with email_draft\n\n"
+            f"Available tools:\n" + "\n".join(tool_lines) + "\n\n"
+            f"Rules:\n{rules_lines}\n\n"
             "You MUST call the 'create_execution_plan' tool with your plan."
         )
 

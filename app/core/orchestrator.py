@@ -19,7 +19,7 @@ from app.services.logging_service import get_logger
 from app.services.prometheus_service import WORKFLOW_COMPLETIONS, WORKFLOW_DURATION
 from app.services.safety_service import check_safety
 from app.services.telemetry_service import get_tracer
-from app.utils.enums import InputType, RunStatus
+from app.utils.enums import RunStatus
 from app.utils.exceptions import ClassificationError, OrchestratorError, PlanningError
 from app.utils.helpers import ms_since
 from app.utils.helpers import utcnow as _utcnow
@@ -34,7 +34,7 @@ _replanner = RePlannerAgent()
 
 class OrchestratorInput(BaseModel):
     run_id: str
-    input_type: InputType
+    input_type: str
     raw_input: str
     priority: int = 5
     skip_confidence_check: bool = False  # set True when human has approved a needs_review run
@@ -97,7 +97,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                     await workflow_service.update_run_cache_hit(db, run_id, True)
                     await workflow_service.update_run_status(db, run_id, RunStatus.COMPLETED, cached_output)
                     await state_manager.set_status(run_id, RunStatus.COMPLETED)
-                    WORKFLOW_COMPLETIONS.labels(input_type=input.input_type.value, status="completed").inc()
+                    WORKFLOW_COMPLETIONS.labels(input_type=input.input_type, status="completed").inc()
                     log.info("workflow_cache_hit", source_run_id=cache_hit.run_id, similarity=cache_hit.similarity)
                     return OrchestratorResult(
                         run_id=run_id,
@@ -110,11 +110,11 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             try:
                 with _tracer.start_as_current_span(
                     "workflow.classify",
-                    attributes={"run_id": run_id, "input_type": input.input_type.value},
+                    attributes={"run_id": run_id, "input_type": input.input_type},
                 ):
                     classifier_result = await _classifier.run({
                         "raw_input": input.raw_input,
-                        "input_type": input.input_type.value,
+                        "input_type": input.input_type,
                     }, api_key=input.openai_api_key)
                 classification = classifier_result.parsed_output
 
@@ -158,7 +158,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                 log.info("classification_done", task_type=classification.get("task_type"), route=canonical_route)
 
             except ClassificationError as e:
-                return await _fail_run(db, run_id, str(e), log, input.input_type.value)
+                return await _fail_run(db, run_id, str(e), log, input.input_type)
 
             # --- Step B: Planning ---
             log.info("planning_started")
@@ -194,7 +194,7 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
                 log.info("planning_done", total_steps=len(initial_steps))
 
             except PlanningError as e:
-                return await _fail_run(db, run_id, str(e), log, input.input_type.value)
+                return await _fail_run(db, run_id, str(e), log, input.input_type)
 
             # --- Step C: Dynamic execution loop ---
             remaining_steps: list[WorkflowStep] = list(initial_steps)
@@ -260,14 +260,14 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             await workflow_service.update_run_status(db, run_id, RunStatus.COMPLETED, final_output)
             await state_manager.set_status(run_id, RunStatus.COMPLETED)
             duration_s = ms_since(_start_time) / 1000
-            WORKFLOW_COMPLETIONS.labels(input_type=input.input_type.value, status="completed").inc()
-            WORKFLOW_DURATION.labels(input_type=input.input_type.value).observe(duration_s)
+            WORKFLOW_COMPLETIONS.labels(input_type=input.input_type, status="completed").inc()
+            WORKFLOW_DURATION.labels(input_type=input.input_type).observe(duration_s)
 
             # --- LLM-as-judge quality evaluation ---
             quality_score: float | None = None
             if settings.enable_judge:
                 judge_result = await evaluate_output(
-                    input_type=input.input_type.value,
+                    input_type=input.input_type,
                     raw_input=input.raw_input,
                     final_output=final_output,
                 )
@@ -298,10 +298,10 @@ async def run_workflow(input: OrchestratorInput) -> OrchestratorResult:
             )
 
         except OrchestratorError as e:
-            return await _fail_run(db, run_id, str(e), log, input.input_type.value)
+            return await _fail_run(db, run_id, str(e), log, input.input_type)
         except Exception as e:
             log.error("unexpected_error", error=str(e), exc_info=True)
-            return await _fail_run(db, run_id, f"Unexpected error: {e}", log, input.input_type.value)
+            return await _fail_run(db, run_id, f"Unexpected error: {e}", log, input.input_type)
 
 
 async def _maybe_replan(
