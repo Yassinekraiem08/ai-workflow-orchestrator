@@ -1,6 +1,6 @@
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 from app.tools.base import BaseTool, ToolResult
 from app.utils.helpers import ms_since, utcnow
