@@ -7,8 +7,8 @@ from app.utils.helpers import ms_since, utcnow
 
 
 class EmailDraftInput(BaseModel):
-    to_address: EmailStr
-    subject: str
+    to_address: str = "customer@example.com"
+    subject: str = "Re: Your Support Request"
     context: str
     tone: str = "professional"  # professional, urgent, friendly
     include_escalation_note: bool = False

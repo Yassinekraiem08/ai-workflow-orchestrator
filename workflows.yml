@@ -38,7 +38,7 @@ tools:
     args: "log_content (str, required — pass the raw log/input text), severity_filter (optional: ERROR or WARN)"
   email_draft:
     description: "Generate a draft email response"
-    args: "recipient (str), subject (str), body_context (str — describe what the email should say)"
+    args: "to_address (str, required — recipient email or name), subject (str, required), context (str, required — what the email should address), tone (optional: professional/urgent/friendly), include_escalation_note (optional bool)"
   webhook:
     description: "Send an HTTP notification to an arbitrary external endpoint"
     args: "url (str), payload (dict), method (optional: POST or GET, default POST)"
