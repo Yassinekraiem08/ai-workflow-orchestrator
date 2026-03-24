@@ -8,10 +8,10 @@ from app.utils.exceptions import LLMResponseError
 
 
 class StepExecutionOutput(BaseModel):
-    step_name: str
-    summary: str
+    step_name: str = ""
+    summary: str = ""
     key_findings: list[str] = []
-    next_action: str
+    next_action: str = ""
     severity: str | None = None  # critical, high, medium, low
     raw_tool_output: dict[str, Any] | None = None
     needs_replan: bool = False  # set True if findings warrant new investigative steps
