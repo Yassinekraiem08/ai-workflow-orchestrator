@@ -43,13 +43,13 @@ If you're building production AI systems and want to contribute or adapt it for 
 
 ## Hacker News — Show HN
 
-**Title:** Show HN: AI that triages production incidents – classifies, plans, executes, replans, escalates to humans
+**Title:** Show HN: AI that triages production incidents with retries, replanning, and human fallback
 
 **Body:**
 
 Hi HN,
 
-I built an open-source system for production incident triage — analyzes logs, queries context, executes actions, and escalates when uncertain. No API key needed for the demo.
+I built an open-source system for production incident triage — it analyzes logs, identifies likely root causes, and suggests next actions, escalating when uncertain. No API key needed for the demo.
 
 **The problem:**
 
@@ -96,7 +96,7 @@ Full comparison in the README. Short version: this is better when you want Celer
 **Live demo (no API key needed):** https://ai-workflow-orchestrator.vercel.app
 **GitHub:** https://github.com/Yassinekraiem08/ai-workflow-orchestrator
 
-Looking for feedback on the replan loop, the confidence gate threshold, and anyone running real incident response who wants to adapt it.
+Would especially love feedback on the replanning loop, confidence thresholds, and how this would fit into real on-call workflows.
 
 ---
 
