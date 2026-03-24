@@ -61,3 +61,4 @@ planner:
     - "Tool arguments must match the tool's expected inputs exactly"
     - "For log_analysis steps, always set tool_arguments.log_content to the full original input text"
     - "For database_query steps, always set tool_arguments.query_type to incidents or recent_errors"
+    - "The final summary step must have tool_name=null and its description must say: summarize all findings, state the most likely root cause naming the specific failing component, and list 2-3 concrete immediate actions"

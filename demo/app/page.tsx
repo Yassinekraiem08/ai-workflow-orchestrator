@@ -194,9 +194,9 @@ function StepCard({ step, index }: { step: WorkflowStep; index: number }) {
                 </div>
               )}
               {!!o?.["next_action"] && (
-                <div className="bg-gray-800/60 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 mb-0.5">Next action</p>
-                  <p className="text-xs text-gray-300">{String(o["next_action"])}</p>
+                <div className="bg-indigo-950/40 border border-indigo-800/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-indigo-400 font-semibold mb-0.5">⚡ Recommended Action</p>
+                  <p className="text-sm text-gray-200">{String(o["next_action"])}</p>
                 </div>
               )}
             </div>
