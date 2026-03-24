@@ -42,12 +42,14 @@ class RePlannerAgent(BaseAgent):
             "Your job is to decide whether the remaining plan needs new steps "
             "to properly investigate or resolve what was discovered.\n\n"
             "Rules:\n"
-            "1. Only add steps if the findings reveal something the remaining plan cannot address.\n"
-            "2. Add at most 3 new steps. Keep them targeted and non-redundant.\n"
+            "1. Only add steps if the findings reveal a NEW issue the remaining plan cannot address.\n"
+            "2. Add at most 2 new steps. Keep them targeted and non-redundant.\n"
             "3. If the remaining plan already covers the findings, set should_replan=false.\n"
             "4. New steps must use tools from: log_analysis, email_draft, webhook, database_query.\n"
             "   A step with tool_name=null is an LLM synthesis step.\n"
-            "5. Be conservative — unnecessary steps waste time and money.\n\n"
+            "5. Be conservative — when in doubt, set should_replan=false.\n"
+            "6. NEVER add retry steps, notification retries, or URL-correction steps.\n"
+            "7. NEVER replan just because a tool returned an error — errors are handled by fallback.\n\n"
             "You MUST call the 'adjust_execution_plan' tool with your decision."
         )
 

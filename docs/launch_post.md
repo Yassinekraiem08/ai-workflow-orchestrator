@@ -43,61 +43,63 @@ If you're building production AI systems and want to contribute or adapt it for 
 
 ## Hacker News — Show HN
 
-**Title:** Show HN: AI Workflow Orchestrator – classify, plan, execute, replan, escalate (open source)
+**Title:** Show HN: AI that triages production incidents – classifies, plans, executes, replans, escalates to humans
 
 **Body:**
 
 Hi HN,
 
-I built an open-source AI workflow orchestrator for operational triage (logs, tickets, emails) and I'm sharing it for feedback and to get early users.
+I built an open-source AI system that handles production incident triage end-to-end — analyzing logs, querying incident databases, drafting notifications, and escalating when it isn't confident. No API key needed to try the live demo.
 
-**What it does differently from most agent demos:**
+**The problem it solves:**
 
-Most agent demos are: prompt → LLM → output. Mine handles what happens when that fails.
+At 2am when payment-svc is returning 503 for all EU-WEST-1 customers ($12k/min revenue impact), you want a system that can: classify the severity, query what's known about the failing dependency, analyze the logs, draft the incident notification, and page the right person — not a chatbot that summarises the ticket and stops.
 
-The pipeline is: safety gate → semantic cache check → classify (with confidence score) → plan → execute steps → replan mid-run if needed → LLM-as-judge quality evaluation → store in semantic cache.
+**What it actually does:**
 
-Every step that can fail has a recovery path:
+Submit a P1 incident ticket, a customer complaint, or a log dump. The system:
+1. Classifies input type + severity with a confidence score
+2. Routes to the right tool chain (log analysis → DB query → webhook/PagerDuty/Slack)
+3. Executes each step, synthesizing findings as it goes
+4. Dynamically replans mid-run if a step reveals something unexpected
+5. Escalates to a human review queue if classifier confidence is below threshold
+
+Every failure has a recovery path:
 - Tool failures: 3× retry with exponential backoff → fallback agent → step marked SKIPPED
 - Worker crashes: 3× Celery retry → dead-letter queue
-- Low-confidence classifications: held for human review instead of executing
+- Low-confidence classifications: held for human review, not executed blindly
 
-**The architecture:**
-- FastAPI (HTTP boundary, JWT auth)
-- Celery + Redis (async distributed execution, priority queues)
-- PostgreSQL (persistent run/step/cost records)
-- OpenTelemetry → Jaeger (distributed traces per run)
-- Prometheus + Grafana (cost, latency, success rate dashboards)
-- Deployed on AWS ECS Fargate
+**Architecture:**
+- FastAPI + Celery + Redis (async distributed execution, priority queues)
+- PostgreSQL (persistent run/step/cost/trace records)
+- OpenTelemetry → Jaeger, Prometheus + Grafana (deployed, not just configured)
+- AWS ECS Fargate (live, not localhost)
+- gpt-4o-mini for classify/plan/replan (cheap), gpt-4o for execution (capable)
 
-**Model routing:**
-- gpt-4o-mini: classifier, planner, replanner, fallback (cheap structured output)
-- gpt-4o: executor agent (reasoning-heavy tool calls)
+Model routing cuts per-task cost 21% vs calling gpt-4o for everything.
 
-This cuts per-task cost by ~21% vs calling gpt-4o for everything, without quality loss on structured tasks.
+**YAML workflow config:**
+Add new incident types, routes, and tools by editing `workflows.yml` — no Python changes needed.
 
-**New: YAML workflow config**
-You can now add custom input types, routes, and tools by editing `workflows.yml` — no Python changes needed. This is what makes it a general framework rather than a specific triage tool.
-
-**Benchmark methodology (not hiding it):**
+**Benchmark (methodology in the repo):**
 - 20 test cases: 7 log / 7 email / 6 ticket
-- Orchestrator success = run reaches `completed` status (objective, no human judging)
-- Baseline success = GPT-4o returns valid JSON with correct `input_type` + non-empty `action` (generous to baseline)
-- Same 20 cases, same inputs, both scripts in the repo — reproduce it yourself
+- 95% success rate vs 68% single-shot GPT-4o baseline
+- $0.0019/task vs $0.0024 baseline (model routing wins)
+- Scripts to reproduce: `scripts/eval.py` and `scripts/eval_baseline.py`
 
-**Known limitations:**
-- 20 cases is a small sample
-- Tool implementations are LLM-based stubs, not real integrations
-- Latency is 5–15s for multi-step runs (not a real-time system)
+**Known limitations — not hiding them:**
+- Tool integrations are intelligent stubs (LLM-generated outputs, not real PagerDuty/Slack calls)
+- 20 eval cases is a small sample
+- 5–15s latency per run (not real-time)
 - Replan depth capped at 2
 
 **Why not LangGraph / AutoGen / Temporal?**
-Reasonable alternatives. This is better when you want Celery distributed workers + LLM planning + per-run cost/trace/step records without framework lock-in. Full comparison in the README.
+Full comparison in the README. Short version: this is better when you want Celery distributed workers + per-run cost/trace/step audit trail + human escalation without framework lock-in.
 
-**Live demo:** https://ai-workflow-orchestrator.vercel.app
+**Live demo (no API key needed):** https://ai-workflow-orchestrator.vercel.app
 **GitHub:** https://github.com/Yassinekraiem08/ai-workflow-orchestrator
 
-Looking for feedback on the replan loop design, the confidence gate, and anyone with a real ops use case who wants to adapt it.
+Looking for feedback on the replan loop, the confidence gate threshold, and anyone running real incident response who wants to adapt it.
 
 ---
 
