@@ -33,7 +33,7 @@ FastAPI · Celery · Redis · PostgreSQL · OpenTelemetry · Prometheus + Grafan
 **Try the live demo:** https://ai-workflow-orchestrator.vercel.app
 **GitHub:** https://github.com/Yassinekraiem08/ai-workflow-orchestrator
 
-What I'm adding next: support for custom workflow types via YAML config (no Python changes needed), and a benchmark comparison write-up.
+Just shipped: custom workflow types via YAML config — add new incident types, routes, and tools without touching Python code.
 
 If you're building production AI systems and want to contribute or adapt it for your use case, issues and PRs are open.
 
@@ -49,48 +49,45 @@ If you're building production AI systems and want to contribute or adapt it for 
 
 Hi HN,
 
-I built an open-source AI system that handles production incident triage end-to-end — analyzing logs, querying incident databases, drafting notifications, and escalating when it isn't confident. No API key needed to try the live demo.
+I built an open-source system for production incident triage — analyzes logs, queries context, executes actions, and escalates when uncertain. No API key needed for the demo.
 
-**The problem it solves:**
+**The problem:**
 
-At 2am when payment-svc is returning 503 for all EU-WEST-1 customers ($12k/min revenue impact), you want a system that can: classify the severity, query what's known about the failing dependency, analyze the logs, draft the incident notification, and page the right person — not a chatbot that summarises the ticket and stops.
+At 2am, when payment-svc is returning 503 for all EU-WEST-1 customers (~$12k/min impact), you don't want a chatbot that summarizes the ticket — you want something that reasons through the failure and tells you what to do.
 
-**What it actually does:**
+**What it does:**
 
-Submit a P1 incident ticket, a customer complaint, or a log dump. The system:
+Submit a support ticket, log dump, or customer issue. The system:
 1. Classifies input type + severity with a confidence score
 2. Routes to the right tool chain (log analysis → DB query → webhook/PagerDuty/Slack)
 3. Executes each step, synthesizing findings as it goes
-4. Dynamically replans mid-run if a step reveals something unexpected
-5. Escalates to a human review queue if classifier confidence is below threshold
+4. Replans mid-run if a step reveals something unexpected
+5. Escalates to human review if classifier confidence is below threshold
 
-Every failure has a recovery path:
-- Tool failures: 3× retry with exponential backoff → fallback agent → step marked SKIPPED
+**Failure handling (this is the interesting part):**
+- Tool failures: 3× retry with exponential backoff → fallback agent → step SKIPPED
 - Worker crashes: 3× Celery retry → dead-letter queue
-- Low-confidence classifications: held for human review, not executed blindly
+- Low confidence: held for human review, not executed blindly
 
 **Architecture:**
 - FastAPI + Celery + Redis (async distributed execution, priority queues)
 - PostgreSQL (persistent run/step/cost/trace records)
 - OpenTelemetry → Jaeger, Prometheus + Grafana (deployed, not just configured)
 - AWS ECS Fargate (live, not localhost)
-- gpt-4o-mini for classify/plan/replan (cheap), gpt-4o for execution (capable)
+- gpt-4o-mini for classify/plan/replan, gpt-4o for execution
 
 Model routing cuts per-task cost 21% vs calling gpt-4o for everything.
-
-**YAML workflow config:**
-Add new incident types, routes, and tools by editing `workflows.yml` — no Python changes needed.
 
 **Benchmark (methodology in the repo):**
 - 20 test cases: 7 log / 7 email / 6 ticket
 - 95% success rate vs 68% single-shot GPT-4o baseline
-- $0.0019/task vs $0.0024 baseline (model routing wins)
+- $0.0019/task vs $0.0024 baseline
 - Scripts to reproduce: `scripts/eval.py` and `scripts/eval_baseline.py`
 
-**Known limitations — not hiding them:**
-- Tool integrations are intelligent stubs (LLM-generated outputs, not real PagerDuty/Slack calls)
+**Limitations — not hiding them:**
+- Tool integrations are intelligent stubs (no real PagerDuty/Slack calls)
 - 20 eval cases is a small sample
-- 5–15s latency per run (not real-time)
+- 5–15s latency per run
 - Replan depth capped at 2
 
 **Why not LangGraph / AutoGen / Temporal?**
