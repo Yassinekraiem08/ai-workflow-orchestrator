@@ -35,12 +35,16 @@ routes:
 tools:
   log_analysis:
     description: "Analyze log content for errors, patterns, and recommended actions"
+    args: "log_content (str, required — pass the raw log/input text), severity_filter (optional: ERROR or WARN)"
   email_draft:
     description: "Generate a draft email response"
+    args: "recipient (str), subject (str), body_context (str — describe what the email should say)"
   webhook:
     description: "Send an HTTP notification to an arbitrary external endpoint"
+    args: "url (str), payload (dict), method (optional: POST or GET, default POST)"
   database_query:
     description: "Query the incident/service database"
+    args: "query_type (str, required: incidents or recent_errors), filters (optional dict: service, severity, status), limit (optional int, default 10)"
   slack_notification:
     description: "Send a formatted alert to a Slack channel via webhook URL"
     args: "webhook_url, message, title (optional), severity (critical/high/medium/low/info), run_id (optional)"
@@ -55,3 +59,5 @@ planner:
     - "Keep plans to 3-6 steps"
     - "The last step must always be a summary/synthesis step with tool_name=null"
     - "Tool arguments must match the tool's expected inputs exactly"
+    - "For log_analysis steps, always set tool_arguments.log_content to the full original input text"
+    - "For database_query steps, always set tool_arguments.query_type to incidents or recent_errors"

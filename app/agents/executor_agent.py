@@ -10,7 +10,7 @@ from app.utils.exceptions import LLMResponseError
 class StepExecutionOutput(BaseModel):
     step_name: str
     summary: str
-    key_findings: list[str]
+    key_findings: list[str] = []
     next_action: str
     severity: str | None = None  # critical, high, medium, low
     raw_tool_output: dict[str, Any] | None = None

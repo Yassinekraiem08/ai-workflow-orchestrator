@@ -15,7 +15,7 @@ _MOCK_INCIDENT_DB: list[dict[str, Any]] = [
 
 
 class DatabaseQueryInput(BaseModel):
-    query_type: str  # "incidents", "services", "recent_errors"
+    query_type: str = "incidents"  # "incidents", "services", "recent_errors"
     filters: dict[str, Any] | None = None
     limit: int = 10
 
