@@ -65,6 +65,7 @@ async def execute_step(
             },
             "tool_result": tool_result,
             "run_context": run_context,
+            "raw_input": raw_input,
         }, api_key=api_key)
 
         await workflow_service.record_llm_trace(

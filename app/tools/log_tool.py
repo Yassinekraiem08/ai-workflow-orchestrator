@@ -8,7 +8,7 @@ from app.utils.helpers import ms_since, utcnow
 
 
 class LogAnalysisInput(BaseModel):
-    log_content: str
+    log_content: str = ""
     severity_filter: str | None = None  # e.g. "ERROR", "WARN"
 
 

@@ -29,18 +29,23 @@ class ExecutorAgent(BaseAgent):
     def build_system_prompt(self) -> str:
         return (
             "You are a step executor in an AI ops triage system. "
-            "You receive a workflow step and its tool output (if any) and produce a structured synthesis.\n\n"
+            "You receive a workflow step, its tool output (if any), and the original input. "
+            "Produce a structured synthesis.\n\n"
             "Your job:\n"
-            "1. Analyze the step's tool output\n"
-            "2. Extract key findings — be specific: name the exact services, error codes, and components involved\n"
-            "3. For the next_action field: give CONCRETE, IMMEDIATE actions an on-call engineer can take right now "
-            "(e.g. 'Restart fraud-check-svc in EU-WEST-1 and monitor circuit breaker status' not 'investigate the issue')\n"
-            "4. Assess severity if applicable\n"
-            "5. For summary steps: state the most likely root cause hypothesis explicitly, "
-            "name the specific failing component, and list 2-3 immediate remediation steps\n"
+            "1. Analyze the step's tool output and original input\n"
+            "2. Extract key findings — name ONLY services, error codes, and components that appear "
+            "in the tool output or original input. NEVER invent service names, error codes, or root causes "
+            "that are not present in the data you were given.\n"
+            "3. For the next_action field: give CONCRETE, IMMEDIATE actions based on actual findings "
+            "(e.g. 'Restart fraud-check-svc in EU-WEST-1 and monitor circuit breaker status'). "
+            "If evidence is limited, say what's known and recommend manual review.\n"
+            "4. Assess severity based on actual signals, not assumptions\n"
+            "5. For summary steps: state the most likely root cause hypothesis based ONLY on evidence "
+            "from prior steps and the original input. If prior steps were skipped or produced no data, "
+            "derive what you can from the original input text alone and explicitly note the limitation.\n"
             "6. Set needs_replan=true ONLY if the findings reveal something critical that "
             "the remaining planned steps cannot address.\n\n"
-            "Be specific and decisive. An engineer reading this at 2am should know exactly what to do.\n"
+            "CRITICAL: Ground every conclusion in actual data. Do not hallucinate.\n"
             "You MUST call the 'record_step_result' tool with your synthesis."
         )
 
@@ -48,6 +53,7 @@ class ExecutorAgent(BaseAgent):
         step = context.get("step", {})
         tool_result = context.get("tool_result", {})
         run_context = context.get("run_context", {})
+        raw_input = context.get("raw_input", "")
 
         tool_section = ""
         if tool_result:
@@ -57,6 +63,10 @@ class ExecutorAgent(BaseAgent):
         prior_section = ""
         if prior_steps:
             prior_section = f"\nContext from prior steps:\n{prior_steps[-3:]}"  # last 3 steps
+        else:
+            prior_section = "\nContext from prior steps: none (earlier steps were skipped or this is the first step)"
+
+        input_section = f"\nOriginal input:\n{raw_input}" if raw_input else ""
 
         return [
             {
@@ -67,6 +77,7 @@ class ExecutorAgent(BaseAgent):
                     f"Step order: {step.get('step_order')}"
                     f"{tool_section}"
                     f"{prior_section}"
+                    f"{input_section}"
                 ),
             }
         ]
@@ -82,8 +93,25 @@ class ExecutorAgent(BaseAgent):
         }
 
     def parse_tool_call(self, tool_input: dict[str, Any]) -> dict[str, Any]:
-        try:
-            output = StepExecutionOutput(**tool_input)
-            return output.model_dump()
-        except Exception as e:
-            raise LLMResponseError(f"Invalid step execution output: {e}") from e
+        # Manually coerce each field so no LLM output shape can cause a failure.
+        raw_findings = tool_input.get("key_findings", [])
+        if isinstance(raw_findings, str):
+            key_findings = [raw_findings] if raw_findings else []
+        elif isinstance(raw_findings, list):
+            key_findings = [str(f) for f in raw_findings if f]
+        else:
+            key_findings = []
+
+        raw_tool_output = tool_input.get("raw_tool_output")
+        if not isinstance(raw_tool_output, dict):
+            raw_tool_output = None
+
+        return StepExecutionOutput(
+            step_name=str(tool_input.get("step_name") or ""),
+            summary=str(tool_input.get("summary") or ""),
+            key_findings=key_findings,
+            next_action=str(tool_input.get("next_action") or ""),
+            severity=tool_input.get("severity"),
+            raw_tool_output=raw_tool_output,
+            needs_replan=bool(tool_input.get("needs_replan", False)),
+        ).model_dump()
