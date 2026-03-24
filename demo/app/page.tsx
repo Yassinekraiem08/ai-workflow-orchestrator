@@ -234,7 +234,7 @@ export default function HomePage() {
   const [priority, setPriority]       = useState(EXAMPLES[0].priority);
   const [customMode, setCustomMode]   = useState(false);
 
-  const [openaiKey, setOpenaiKey]     = useState("");
+  const [openaiKey] = useState("");
   const [submitting, setSubmitting]   = useState(false);
   const [runId, setRunId]             = useState<string | null>(null);
   const [run, setRun]                 = useState<WorkflowRun | null>(null);
@@ -499,21 +499,6 @@ export default function HomePage() {
               placeholder="Paste a ticket, email, or log snippet…"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-200 font-mono leading-relaxed resize-y focus:outline-none focus:border-indigo-500 placeholder-gray-600"
             />
-          </div>
-
-          <div className="border border-gray-700 rounded-lg p-4 space-y-2 bg-gray-800/30">
-            <label className="block text-xs text-gray-400" htmlFor="openai-key">
-              OpenAI API Key <span className="text-gray-600">(optional — use your own key)</span>
-            </label>
-            <input
-              id="openai-key"
-              type="password"
-              value={openaiKey}
-              onChange={(e) => setOpenaiKey(e.target.value)}
-              placeholder="sk-... (leave empty to use the shared demo key)"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-200 font-mono focus:outline-none focus:border-indigo-500 placeholder-gray-600"
-            />
-            <p className="text-xs text-gray-600">Your key is never stored — it&apos;s used only for this run and discarded immediately.</p>
           </div>
 
           <button
