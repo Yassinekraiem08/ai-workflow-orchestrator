@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 from app.agents.base_agent import BaseAgent
 from app.config import settings
-from app.utils.exceptions import LLMResponseError
 
 
 class StepExecutionOutput(BaseModel):
