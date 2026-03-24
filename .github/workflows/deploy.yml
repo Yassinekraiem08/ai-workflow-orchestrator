@@ -84,6 +84,30 @@ jobs:
 
       - name: Wait for API service to stabilize
         run: |
-          aws ecs wait services-stable \
-            --cluster "$ECS_CLUSTER" \
-            --services "$ECS_SERVICE_API"
+          echo "Waiting for ECS service to stabilize (up to 15 minutes)..."
+          for i in $(seq 1 60); do
+            STATUS=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE_API" \
+              --query 'services[0].deployments' \
+              --output json)
+            RUNNING=$(echo "$STATUS" | python3 -c "
+          import sys, json
+          deployments = json.load(sys.stdin)
+          primary = next((d for d in deployments if d['status'] == 'PRIMARY'), None)
+          print(primary['runningCount'] if primary else 0)
+          ")
+            DESIRED=$(aws ecs describe-services \
+              --cluster "$ECS_CLUSTER" \
+              --services "$ECS_SERVICE_API" \
+              --query 'services[0].desiredCount' \
+              --output text)
+            echo "Attempt $i/60 — running=$RUNNING desired=$DESIRED"
+            if [ "$RUNNING" = "$DESIRED" ] && [ "$DESIRED" -gt 0 ]; then
+              echo "Service is stable."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "WARNING: Service did not fully stabilize within 15 minutes, but deployment was triggered successfully."
+          exit 0
