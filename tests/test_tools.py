@@ -28,11 +28,14 @@ class TestLogAnalysisTool:
         assert result.output["error_count"] == 0
         assert result.output["severity"] == "low"
 
-    async def test_invalid_arguments(self):
+    async def test_empty_arguments(self):
+        # log_content defaults to "" so the tool handles missing args gracefully
+        # (prevents null planner args from crashing the execution pipeline)
         tool = LogAnalysisTool()
-        result = await tool.execute({})  # missing required field
-        assert result.success is False
-        assert result.error is not None
+        result = await tool.execute({})
+        assert result.success is True
+        assert result.output["error_count"] == 0
+        assert result.output["severity"] == "low"
 
     async def test_severity_filter(self):
         tool = LogAnalysisTool()
