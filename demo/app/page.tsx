@@ -85,13 +85,27 @@ function MetricsBar({ metrics }: { metrics: Metrics | null }) {
   );
 }
 
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: "bg-red-900/60 text-red-300 border-red-700/50",
+  high:     "bg-orange-900/60 text-orange-300 border-orange-700/50",
+  medium:   "bg-yellow-900/60 text-yellow-300 border-yellow-700/50",
+  low:      "bg-gray-800 text-gray-400 border-gray-700",
+};
+
+function formatDuration(ms: number): string {
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${ms}ms`;
+}
+
 // ── StepCard ──────────────────────────────────────────────────────────────────
 
 function StepCard({ step, index }: { step: WorkflowStep; index: number }) {
   const [expanded, setExpanded] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
   const cls = STEP_COLOR[step.status] ?? "bg-gray-700 text-gray-300";
-  const hasOutput =
-    step.output_data && Object.keys(step.output_data).length > 0;
+  const o = step.output_data as Record<string, unknown> | null;
+  const hasOutput = o && Object.keys(o).length > 0;
+  const isFallback = !!o?.["_fallback_used"];
 
   let durationMs: number | null = null;
   if (step.started_at && step.completed_at) {
@@ -111,11 +125,11 @@ function StepCard({ step, index }: { step: WorkflowStep; index: number }) {
         <span className="w-5 h-5 rounded-full bg-gray-700 text-xs flex items-center justify-center text-gray-400 font-mono flex-shrink-0">
           {index + 1}
         </span>
-        <span className="flex-1 text-sm font-medium text-gray-200 font-mono">
+        <span className="flex-1 text-sm font-medium text-gray-200">
           {step.step_name.replace(/_/g, " ")}
         </span>
         {durationMs !== null && (
-          <span className="text-xs text-gray-600 mr-1">{durationMs}ms</span>
+          <span className="text-xs text-gray-600 mr-1">{formatDuration(durationMs)}</span>
         )}
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>
           {step.status}
@@ -125,25 +139,80 @@ function StepCard({ step, index }: { step: WorkflowStep; index: number }) {
             className={`w-4 h-4 text-gray-600 transition-transform flex-shrink-0 ${
               expanded ? "rotate-180" : ""
             }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         )}
       </button>
 
       {expanded && hasOutput && (
-        <div className="px-4 pb-4 bg-gray-900/60 border-t border-gray-700">
-          <pre className="text-xs text-gray-300 overflow-x-auto mt-3 leading-relaxed">
-            {JSON.stringify(step.output_data, null, 2)}
-          </pre>
+        <div className="px-4 pb-4 bg-gray-900/60 border-t border-gray-700 space-y-3 pt-3">
+          {isFallback ? (
+            // Fallback / skipped step view
+            <div className="space-y-2">
+              <p className="text-xs text-yellow-400 font-medium">Step failed — fallback response generated</p>
+              {!!o?.["safe_response"] && (
+                <p className="text-sm text-gray-300">{String(o["safe_response"])}</p>
+              )}
+              {Array.isArray(o?.["recommended_next_steps"]) && (o["recommended_next_steps"] as string[]).length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Recommended next steps:</p>
+                  <ul className="space-y-0.5">
+                    {(o["recommended_next_steps"] as string[]).map((s, i) => (
+                      <li key={i} className="text-xs text-gray-400 flex gap-1.5">
+                        <span className="text-gray-600 flex-shrink-0">›</span>{s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Normal completed step view
+            <div className="space-y-3">
+              {!!o?.["severity"] && (
+                <span className={`inline-block text-xs px-2 py-0.5 rounded-full border font-medium ${
+                  SEVERITY_COLOR[String(o["severity"]).toLowerCase()] ?? SEVERITY_COLOR.low
+                }`}>
+                  {String(o["severity"]).toUpperCase()}
+                </span>
+              )}
+              {!!o?.["summary"] && (
+                <p className="text-sm text-gray-200 leading-relaxed">{String(o["summary"])}</p>
+              )}
+              {Array.isArray(o?.["key_findings"]) && (o["key_findings"] as string[]).length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1.5">Key findings:</p>
+                  <ul className="space-y-1">
+                    {(o["key_findings"] as string[]).map((f, i) => (
+                      <li key={i} className="text-xs text-gray-300 flex gap-2">
+                        <span className="text-indigo-500 flex-shrink-0">•</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {!!o?.["next_action"] && (
+                <div className="bg-gray-800/60 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 mb-0.5">Next action</p>
+                  <p className="text-xs text-gray-300">{String(o["next_action"])}</p>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setShowRaw((r) => !r); }}
+            className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+          >
+            {showRaw ? "Hide raw JSON" : "Show raw JSON"}
+          </button>
+          {showRaw && (
+            <pre className="text-xs text-gray-500 overflow-x-auto leading-relaxed border border-gray-800 rounded p-2">
+              {JSON.stringify(o, null, 2)}
+            </pre>
+          )}
         </div>
       )}
 
@@ -579,10 +648,21 @@ export default function HomePage() {
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 Final Output
               </h3>
-              <div className="bg-gray-900 border border-emerald-800/40 rounded-xl p-5">
-                <pre className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed font-sans">
-                  {run.final_output}
-                </pre>
+              <div className="bg-gray-900 border border-emerald-800/40 rounded-xl p-5 space-y-3">
+                {run.final_output.split(/\n\n+/).map((chunk, i) => {
+                  const match = chunk.match(/^\[(.+?)\]\s*([\s\S]+)$/);
+                  if (match) {
+                    return (
+                      <div key={i}>
+                        <p className="text-xs text-indigo-400 font-medium mb-1">{match[1]}</p>
+                        <p className="text-sm text-gray-200 leading-relaxed">{match[2].trim()}</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p key={i} className="text-sm text-gray-200 leading-relaxed">{chunk.trim()}</p>
+                  );
+                })}
               </div>
             </div>
           )}
