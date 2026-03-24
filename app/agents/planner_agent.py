@@ -12,7 +12,7 @@ class PlanStep(BaseModel):
     step_name: str
     tool_name: str | None = None  # None = LLM-only step
     tool_arguments: dict[str, Any] | None = None
-    description: str
+    description: str = ""
     depends_on: list[int] = Field(default_factory=list)
 
 
